@@ -1,0 +1,177 @@
+﻿@using Waman_app.Models
+@model CompleteInspectorPlanning
+@{
+    ViewBag.Title = "Inspection Report";
+}
+
+<style>
+    .span-sig {
+        display: none;
+    }
+
+    .img-sig {
+        display: block;
+        max-height: 95%;
+        max-width: 95%;
+    }
+
+    .img-none {
+        display: none;
+    }
+
+    .span-show {
+        display: block;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mt-30">@Model.location.name</h1>
+    </div>
+    <div class="col-md-12">
+        <h4 class="mt-15 mb-10 color-azure">ENTITY REPRESENTATIVE</h4>
+        <div class="flex-start">
+            <section class="flex-start textsize-5">
+                <p class="mr-20">
+                    <strong>Name & Surname:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
+                    <strong>Date:</strong>&nbsp;<span>@Model.inspectorPlanning.date.ToString("dd/MM/yyyy")</span>
+                </p>
+                <p class="mr-20">
+                    <strong>Job Title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
+                    <strong>Time:</strong>&nbsp;<span>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</span>
+                </p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<div class="page-list mt-30">
+    <div class="row">
+        <div class="col-md-12">
+            <h4 class="line-top color-azure">WORKERS LIST</h4>
+        </div>
+        <div class="col-md-12">
+            <div class="site-table site-table-inspection site-table-form">
+                <ul class="site-table__top">
+                    <li style="width:23%;"><span>NAME</span></li>
+                    <li style="width:10%;"><span>MOBILE</span></li>
+                    <li style="width:10%;"><span>ID CARD</span></li>
+                    <li style="width:15%; justify-content: center;"><span>TIME SHEET</span></li>
+                    <li style="width: 15%; justify-content: center;"><span>FOUND AT WORK</span></li>
+                    <li style="width:20%;"><span>OTHER ISSUES</span></li>
+                    <li style="width:12%;"><span>SIGNATURE</span></li>
+                </ul>
+                @if (Model.details != null && Model.details.Any())
+                {
+                    foreach (var detail in Model.details)
+                    {
+                        <ul>
+                            <li style="width:23%;">@detail.worker.name @detail.worker.lastName</li>
+                            <li style="width:10%;">@detail.worker.mobile</li>
+                            <li style="width:10%;">@detail.worker.idCardNumber</li>
+                            <li style="width:15%; justify-content: center;">
+                                <div class="flex-between">
+                                    <section class="text-center mr-15">
+                                        <label>
+                                            YES<br />
+                                            <input type="radio" name="timeSheet_@detail.det.id" value="true" disabled @(detail.det.timeSheet == true ? "checked" : "") />
+                                        </label>
+                                    </section>
+                                    <section class="text-center ml-15">
+                                        <label>
+                                            NO<br />
+                                            <input type="radio" name="timeSheet_@detail.det.id" value="false" disabled @(detail.det.timeSheet == false ? "checked" : "") />
+                                        </label>
+                                    </section>
+                                </div>
+                            </li>
+                            <li style="width:15%; justify-content: center;">
+                                <div class="flex-between">
+                                    <section class="text-center mr-15">
+                                        <label>
+                                            YES<br />
+                                            <input type="radio" name="foundAtWork_@detail.det.id" value="true" disabled @(detail.det.foundAtWork == true ? "checked" : "") />
+                                        </label>
+                                    </section>
+                                    <section class="text-center ml-15">
+                                        <label>
+                                            NO<br />
+                                            <input type="radio" name="foundAtWork_@detail.det.id" value="false" disabled @(detail.det.foundAtWork == false ? "checked" : "") />
+                                        </label>
+                                    </section>
+                                </div>
+                            </li>
+                            <li style="width:20%;">
+                                <textarea name="otherIssues_@detail.det.id" disabled>@detail.det.otherIssues</textarea>
+                            </li>
+                            <li style="width:12%;" class="flex">
+                                @if (@detail.det.signature == null)
+                                {
+                                    <text>No signature</text>
+                                }
+                                else
+                                {
+                                    <img class="img-sig-@detail.det.id img-sig" src="@detail.det.signature" />
+                                }
+                            </li>
+                        </ul>
+                    }
+                }
+                else
+                {
+                    <ul>
+                        <li style="width:100%; text-align:center;">No workers assigned to this location.</li>
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-30">
+    <div class="col-md-12">
+        <div class="flex-column">
+            <h4 class="color-blue mb-10 mt-10">INSPECTOR COMMENTS:</h4>
+            <textarea class="entity-comments" disabled name="comments">@Model.inspectorPlanning.comments</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="page-list mt-30">
+    <div class="row">
+        <div class="col-md-12 mb-30">
+            <div class="flex-column">
+                <h4 class="color-blue mb-10">ENTITY COMMENTS:</h4>
+                <textarea class="entity-comments" disabled name="entityComment">@Model.inspectorPlanning.entityComment</textarea>
+            </div>
+        </div>
+        @if (@Model.inspectorPlanning.inspectorAbsenceComment != null)
+        {
+            <div class="col-md-12 mt-20">
+                <div class="flex-column">
+                    <h4 class="color-blue mb-10">WHY THE REPRESENTATIVE IS ABSENT:</h4>
+                    <textarea class="absent-comments" disabled name="inspectorAbsenceComment">@Model.inspectorPlanning.inspectorAbsenceComment</textarea>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row row-signature">
+    <div class="col-md-12">
+        <div class="flex-end mt-10">
+            <div class="flex-column">
+                <h4 class="color-blue mb-5">SIGNATURE:</h4>
+                <img class="img-sig-@Model.inspectorPlanning.id img-sig" src="https://auth.waman.app/@Model.inspectorPlanning.signature" />
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-12 mt-15">
+        <div class="flex-between">
+            <a href="/Home/InspectionArchive" class="back-button"><i class='bx bx-chevron-left'></i>BACK</a>
+        </div>
+    </div>
+</div>

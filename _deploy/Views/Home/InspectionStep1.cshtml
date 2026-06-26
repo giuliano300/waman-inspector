@@ -1,0 +1,138 @@
+﻿@using Waman_app.Models
+@model CompleteInspectorPlanning
+@{
+    ViewBag.Title = "InspectionStep1";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mt-30">@Model.location.name</h1>
+    </div>
+    <div class="col-md-12">
+        <h4 class="mt-15 mb-10 color-azure">ENTITY REPRESENTATIVE</h4>
+        <div class="flex-start">
+            <section class="flex-start textsize-5">
+                <p class="mr-20">
+                    <strong>Name & Surname:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
+                    <strong>Date:</strong>&nbsp;<span>@Model.inspectorPlanning.date.ToString("dd/MM/yyyy")</span>
+                </p>
+                <p class="mr-20">
+                    <strong>Job Title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
+                    <strong>Time:</strong>&nbsp;<span>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</span>
+                </p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="/Home/SaveInspectionStep1" id="inspectionForm">
+    <input type="hidden" name="inspectorPlanningId" value="@Model.inspectorPlanning.id" />
+    <div class="page-list mt-30">
+        <div class="row">
+            <div class="col-md-12">
+                <h4 class="line-top color-azure">WORKERS LIST</h4>
+            </div>
+            <div class="col-md-12">
+                <div class="site-table site-table-inspection site-table-form">
+                    <ul class="site-table__top">
+                        <li style="width:25%;"><span>NAME</span></li>
+                        <li style="width:10%;"><span>ID CARD</span></li>
+                        <li style="width:20%; justify-content: center;"><span>TIME SHEET</span></li>
+                        <li style="width:20%; justify-content: center;"><span>FOUND AT WORK</span></li>
+                        <li style="width:25%;"><span>OTHER ISSUES</span></li>
+                    </ul>
+                    @if (Model.details != null && Model.details.Any())
+                    {
+                        foreach (var detail in Model.details)
+                        {
+                            <ul>
+                                <li style="width:25%;">@detail.worker.name @detail.worker.lastName</li>
+                                <li style="width:10%;">@detail.worker.idCardNumber</li>
+                                <li style="width:20%; justify-content: center;">
+                                    <div class="flex-between">
+                                        <section class="text-center mr-15">
+                                            <label>
+                                                YES<br />
+                                                <input type="radio" name="timeSheet_@detail.det.id" value="true" required @(detail.det.timeSheet == true ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                        <section class="text-center ml-15">
+                                            <label>
+                                                NO<br />
+                                                <input type="radio" name="timeSheet_@detail.det.id" value="false" required @(detail.det.timeSheet == false ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                    </div>
+                                </li>
+                                <li style="width:20%; justify-content: center;">
+                                    <div class="flex-between">
+                                        <section class="text-center mr-15">
+                                            <label>
+                                                YES<br />
+                                                <input type="radio" name="foundAtWork_@detail.det.id" value="true" required @(detail.det.foundAtWork == true ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                        <section class="text-center ml-15">
+                                            <label>
+                                                NO<br />
+                                                <input type="radio" name="foundAtWork_@detail.det.id" value="false" required @(detail.det.foundAtWork == false ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                    </div>
+                                </li>
+                                <li style="width:25%;">
+                                    <textarea name="otherIssues_@detail.det.id">@detail.det.otherIssues</textarea>
+                                </li>
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <ul>
+                            <li style="width:100%; text-align:center;">No workers assigned to this location.</li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="row mt-30">
+            <div class="col-md-12">
+                <div class="flex-column">
+                    <h4 class="color-blue mb-10">INSPECTOR COMMENTS:</h4>
+                    <textarea class="entity-comments" placeholder="Write a note or comment here..." name="comments">@Model.inspectorPlanning.comments</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 mt-15">
+            <div class="flex-between">
+                <a href="/Home/InspectionPlan" class="back-button"><i class='bx bx-chevron-left'></i>BACK</a>
+                <button type="submit" class="next-button">ENTITY DECLARATION <i class='bx bx-chevron-right'></i></button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@*<script>
+    document.getElementById("inspectionForm").addEventListener("submit", function (e) {
+        let valid = true;
+
+        // Get all worker IDs
+        const workerIds = @Html.Raw(Json.Encode(Model.details.Select(d => d.det.id)));
+
+        // Check if all radios are selected for timeSheet and foundAtWork
+        workerIds.forEach(id => {
+            const timeSheetSelected = document.querySelector(`input[name="timeSheet_${id}"]:checked`);
+            const foundAtWorkSelected = document.querySelector(`input[name="foundAtWork_${id}"]:checked`);
+
+            if (!timeSheetSelected || !foundAtWorkSelected)
+                valid = false;
+        });
+
+        if (!valid) {
+            e.preventDefault(); // Stop form submission
+            alert("Please fill out all required fields for each worker.");
+        }
+    });
+</script>*@

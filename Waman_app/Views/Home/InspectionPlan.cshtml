@@ -1,0 +1,84 @@
+﻿@using Waman_app.Models;
+@model List<Waman_app.Models.CompleteInspectorPlanning>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mt-30">
+            Daily Inspection Plan<br />
+            <span>@DateTime.Now.ToString("dd/MM/yyyy")</span>
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="planning">
+            @if (Model != null && Model.Any())
+            {
+                var today = DateTime.Today;
+                var dailyPlans = Model.Where(item => item.inspectorPlanning.date.Date == today).OrderBy(a => a.inspectorPlanning.time);
+
+                if (dailyPlans.Any())
+                {
+                    foreach (var item in dailyPlans)
+                    {
+                        <div class="planning__item">
+                            <div class="planning__item-info">
+                                <section class="flex-start">
+                                    <span class="mr-30">
+                                        <i class='bx bxs-calendar color-primary'></i> @item.inspectorPlanning.date.ToString("dd/MM/yyyy")
+                                    </span>
+                                    <span>
+                                        <i class='bx bxs-time color-primary'></i> @item.inspectorPlanning.time.ToString(@"hh\:mm")
+                                    </span>
+                                </section>
+                                <h2>
+                                    @item.location.name
+                                </h2>
+                                <p>@item.location.address - @item.city.name</p>
+                            </div>
+                            <div class="planning__item-action">
+                                @if (!item.inspectorPlanning.closed)
+                                {
+                                    <a href="@GenerateNavigationUrl(item.location, item.city)" target="_blank" class="background-azure">
+                                        <i class='bx bxs-navigation'></i>
+                                        <span>
+                                            Navigate to<br />
+                                            Location
+                                        </span>
+                                    </a>
+                                    <a href="@Url.Action("InspectionStep1", "Home", new { id = item.inspectorPlanning.id })" class="background-orange">
+                                        <i class='bx bxs-right-arrow'></i>
+                                        <span>
+                                            Start<br />
+                                            Inspection
+                                        </span>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-center mb-10 mt-10">No inspections scheduled for today.</p>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+
+@functions {
+    // Helper function to generate navigation URL including city
+    public string GenerateNavigationUrl(Locations location, Cities city)
+    {
+        if (location != null && !string.IsNullOrEmpty(location.address) && city != null && !string.IsNullOrEmpty(city.name))
+        {
+            var fullAddress = $"{location.name} {location.address}, {city.name}";
+            var encodedAddress = Uri.EscapeDataString(fullAddress);
+            return $"https://www.google.com/maps/search/?api=1&query={encodedAddress}";
+        }
+        return "#";
+    }
+}

@@ -1,0 +1,97 @@
+﻿@{
+    int numberOfPages = (int)Math.Ceiling((double)ViewBag.totalItems / 25) - 1;
+    if (numberOfPages < 2)
+    {
+        numberOfPages = 1; // Per evitare problemi con valori minimi
+    }
+    int totalPages = numberOfPages;
+    if (totalPages > 10)
+    {
+        totalPages = 10;
+    }
+    string year = Request.QueryString["year"];
+    string month = Request.QueryString["month"];
+    string locationName = Request.QueryString["locationName"];
+    int page = 0;
+    if (Request.QueryString["page"] != null)
+    {
+        page = Convert.ToInt32(Request.QueryString["page"]);
+    }
+
+
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <ul class="pagination">
+            @if ((double)ViewBag.totalItems > 0)
+            {
+                int range = 4;
+                // Numero di pagine da mostrare prima/dopo la pagina attuale
+                int startPage = Math.Max(2, page - range); // Partenza, minimo 2
+                int endPage = Math.Min(numberOfPages - 1, page + range); // Fine, massimo numberOfPages - 1
+                if (page < 6 && numberOfPages > 10)
+                {
+                    endPage = 10;
+                }
+
+                // Prima pagina sempre visibile
+                string urlPrimo = $"/Home/InspectionArchive?locationName={locationName}&year={year}&year={year}&month={month}";
+                if (page <= 1)
+                {
+                    <li class="active"><a href="#">1</a></li>
+                }
+                else
+                {
+                    <li><a href="@urlPrimo">1</a></li>
+                }
+
+                // Ellissi iniziali
+                if (startPage > 2)
+                {
+                    int prevPage = startPage - 1; // Pagina precedente al primo numero visibile
+                    string urlPrev = $"/Home/InspectionArchive?locationName={locationName}&year={year}&month={month}&page={prevPage}";
+                    <li><a href="@urlPrev" class="noBorder">...</a></li>
+                }
+
+                // Pagine centrali
+                for (var i = startPage; i <= endPage; i++)
+                {
+                    string url = $"/Home/InspectionArchive?locationName={locationName}&year={year}&month={month}&page={i}";
+                    if (page == i)
+                    {
+                        <li class="active"><a href="#">@i</a></li>
+                    }
+                    else
+                    {
+                        <li><a href="@url">@i</a></li>
+                    }
+                }
+
+                // Ellissi finali
+                if (endPage < numberOfPages - 1)
+                {
+                    int nextPage = endPage + 1; // Pagina successiva all'ultimo numero visibile
+                    string urlNext = $"/Home/InspectionArchive?locationName={locationName}&year={year}&month={month}&page={nextPage}";
+                    <li><a href="@urlNext" class="noBorder">...</a></li>
+                }
+
+                // Ultima pagina sempre visibile
+                string urlUltimo = $"/Home/InspectionArchive?locationName={locationName}&year={year}&month={month}&page={numberOfPages}";
+
+
+                if (numberOfPages > 1)
+                {
+                    if (page == numberOfPages && numberOfPages > 1)
+                    {
+                        <li class="active"><a href="#">@numberOfPages</a></li>
+                    }
+                    else
+                    {
+                        <li><a href="@urlUltimo">@numberOfPages</a></li>
+                    }
+                }
+            }
+        </ul>
+    </div>
+</div>

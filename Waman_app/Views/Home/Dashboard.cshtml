@@ -1,0 +1,202 @@
+﻿@model List<Waman_app.Models.CompleteInspectorPlanning>
+@using Waman_app.Models
+@using Newtonsoft.Json
+
+@{
+    ViewBag.Title = "Dashboard";
+    var today = DateTime.Today;
+
+    var inspectorsCookie = Request.Cookies["Inspectors"]?.Value;
+    var inspector = inspectorsCookie != null ? JsonConvert.DeserializeObject<Inspectors>(inspectorsCookie) : null;
+    var inspectorIdCookie = inspector.id;
+}
+
+<div class="dashboard">
+    <div class="button-mobile">
+        @if (ViewBag.HasTodayInspections)
+        {
+            <a href="/Home/InspectionPlan" class="enabled">
+                <i class='bx bxs-calendar'></i><br />
+                Inspections plan
+            </a>
+        }
+        else
+        {
+            <a href="javascript:void(0)" class="disabled" title="No inspections available for today">
+                <i class='bx bxs-calendar'></i><br />
+                Inspections plan
+            </a>
+        }
+    </div>
+    <div class="button-mobile">
+        <a href="/Home/InspectionArchive">
+            <i class='bx bxs-folder'></i><br />
+            Inspections archive
+        </a>
+    </div>
+    <div class="button-mobile">
+        <a href="/Home/InfoBox">
+            <i class='bx bxs-info-square'></i><br />
+            Info box
+        </a>
+    </div>
+</div>
+
+<div class="page-list mt-30">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h4 class="line-top color-blue">YOUR DAILY INSPECTIONS</h4>
+        </div>
+        <div class="col-md-12">
+            <div class="site-table site-table-dashboard">
+                <ul class="site-table__top">
+                    <li style="width:13%;"><span>DATE</span></li>
+                    <li style="width:10%;"><span>TIME</span></li>
+                    <li style="width:30%;"><span>LOCATION</span></li>
+                    <li style="width:47%;"><span>ADDRESS</span></li>
+                </ul>
+                @if (Model != null && Model.Any())
+                {
+                    var todayPlans = Model.Where(item => item.inspectorPlanning.date.Date == today).Where(a => a.inspectorPlanning.closed != true).OrderBy(a => a.inspectorPlanning.time);
+
+                    if (todayPlans.Any())
+                    {
+                        foreach (var item in todayPlans)
+                        {
+                            //var fullAddress = $"{item.location.name} {item.location.address}, {item.city.name}";
+                            var fullAddress = $"{item.location.address}, {item.city.name}";
+                            var locationName = $"{item.location.name}";
+
+                            <ul class="inspection-item" data-inspection-id="@item.inspectorPlanning.id" data-fulladdress="@fullAddress" data-locationname="@locationName">
+                                <li style="width:13%;">@item.inspectorPlanning.date.ToString("dd/MM/yyyy")</li>
+                                <li style="width:10%;">@item.inspectorPlanning.time.ToString(@"hh\:mm")</li>
+                                <li style="width:30%;"><strong class="color-blue">@item.location.name</strong></li>
+                                <li style="width:47%;">@item.location.address - @item.city.name</li>
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-center" style="margin: 10px">No inspections scheduled for today.</p>
+                    }
+                }
+                else
+                {
+                    <p class="text-center" style="margin: 10px">No inspections scheduled for today.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+    // Ottieni la data odierna in formato YYYY-MM-DD
+    var today = new Date().toISOString().split('T')[0];
+
+    // Recupera i dati salvati nel localStorage
+    var inspectionData = JSON.parse(localStorage.getItem('inspectionData') || '{}');
+    var inspectionCoordinatesSentDate = inspectionData.date;
+    var sentInspectionIds = inspectionData.sentInspectionIds || [];
+
+    var hasSentAllCoordinates = false;
+    var pendingRequests = 0;
+
+    function loadInspectionCoordinates() {
+        // Controlla se le coordinate sono già state inviate oggi
+        if (inspectionCoordinatesSentDate !== today) {
+            // Se la data è diversa, resetta l'elenco degli ID inviati
+            sentInspectionIds = [];
+            inspectionCoordinatesSentDate = today;
+        }
+
+        // Itera su ogni elemento con la classe 'inspection-item'
+        $('.inspection-item').each(function () {
+            var inspectionId = $(this).data('inspection-id');
+            var fullAddress = $(this).data('fulladdress');
+            var locationName = $(this).data('locationname');
+            var space = " ";
+
+            if (!fullAddress && !locationName)
+                return;
+
+            // Se l'ispezione è già stata inviata, salta
+            if (sentInspectionIds.includes(inspectionId))
+                return;
+
+            // Combina nome e indirizzo per la geocodifica
+            var addressToGeocode = locationName + space + fullAddress;
+            pendingRequests++;
+
+            // Effettua la chiamata al controller per la geocodifica
+            $.ajax({
+                url: '@Url.Action("GeocodeAddress", "Geocoding")',
+                type: 'POST',
+                data: { address: addressToGeocode },
+                success: function (data) {
+                    if (data.success) {
+                        var lat = data.latitude;
+                        var lon = data.longitude;
+
+                        var coordinateData = {
+                            Latitude: parseFloat(lat),
+                            Longitude: parseFloat(lon),
+                            Timestamp: new Date().toISOString(),
+                            Address: fullAddress,
+                            LocationName: locationName
+                        };
+
+                        var inspectorId = '@inspectorIdCookie';
+
+                        // Invia i dati al server
+                        $.ajax({
+                            url: 'https://tracking.waman.app/api/coordinates/add?id=' + inspectorId,
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(coordinateData)
+                        })
+                        .done(function (response) {
+                            console.log("Inspection marker inviato per " + fullAddress, response);
+
+                            // Aggiungi l'ID dell'ispezione all'elenco degli ID inviati
+                            sentInspectionIds.push(inspectionId);
+
+                            // Aggiorna il localStorage
+                            inspectionData.date = today;
+                            inspectionData.sentInspectionIds = sentInspectionIds;
+                            localStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+                        })
+                        .fail(function (err) {
+                            console.error("Errore nell'invio del marker di ispezione per " + fullAddress, err);
+                        })
+                        .always(function () {
+                            pendingRequests--;
+                            checkAllRequestsCompleted();
+                        });
+                    } else {
+                        console.error("Geocoding fallito per l'indirizzo: " + fullAddress);
+                        pendingRequests--;
+                        checkAllRequestsCompleted();
+                    }
+                },
+                error: function (jqxhr, textStatus, error) {
+                    console.error("Richiesta a Geocoding API fallita: " + textStatus + ", " + error);
+                    pendingRequests--;
+                    checkAllRequestsCompleted();
+                }
+            });
+        });
+    }
+
+    // Funzione per verificare se tutte le richieste sono completate
+    function checkAllRequestsCompleted() {
+        if (pendingRequests === 0 && !hasSentAllCoordinates) {
+            console.log("Tutte le coordinate di ispezione sono state caricate.");
+            hasSentAllCoordinates = true;
+        }
+    }
+
+    // Chiama la funzione per caricare le coordinate delle ispezioni
+    loadInspectionCoordinates();
+});
+</script>

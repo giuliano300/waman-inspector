@@ -1,0 +1,39 @@
+﻿@using Waman_app.Models
+@model List<InfoBoxToInspectors>
+
+@{
+    ViewBag.Title = "InfoBox";
+}
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mt-30 mb-30">
+            Info box<br />
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        @if (Model != null && Model.Any())
+        {
+            foreach (var info in Model.OrderByDescending(i => i.date))
+            {
+                <div class="info-box">
+                    <h2>
+                        <span>@info.date.ToString("MMM").ToUpper()</span><br />
+                        @info.date.Day
+                    </h2>
+                    <section>
+                        <h4>@info.name</h4>
+                        <p>@Html.Raw(info.description)</p>
+                    </section>
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-center">No information available.</p>
+        }
+    </div>
+</div>

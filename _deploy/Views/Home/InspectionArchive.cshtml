@@ -1,0 +1,110 @@
+﻿@using Waman_app.Models;
+@using System.Globalization;
+@model List<CompleteInspectorPlanning>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="text-center mt-30">
+            Inspection Archive<br />
+        </h1>
+    </div>
+</div>
+
+<div class="page-list mt-30">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="page-list__header">
+                @using (Html.BeginForm("InspectionArchive", "Home", FormMethod.Get, new { id = "filter" }))
+                {
+                    <div class="flex-start">
+                        <h4 class="color-blue mt-15 mr-10">FILTER BY:</h4>
+
+                        <div class="mr-10">
+                            <strong>Location</strong><br />
+                            <input type="text" name="locationName" placeholder="Location name" />
+                        </div>
+                        <div class="mr-10">
+                            <strong>Month</strong><br />
+                            <select name="month">
+                                <option selected value="">Select month</option>
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i">@CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(i)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mr-10">
+                            <strong>Year</strong><br />
+                            <select name="year">
+                                <option selected value="">Select year</option>
+                                @for (int year = DateTime.Now.Year; year >= DateTime.Now.Year - 5; year--)
+                                {
+                                    <option value="@year">@year</option>
+                                }
+                            </select>
+                        </div>
+                        <div>
+                            <br>
+                            <input type="submit" value="" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <button id="resetFilter" class="delete-filter"><i class='bx bx-x'></i>RESET FILTER</button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="site-table">
+                <ul class="site-table__top">
+                    <li style="width:15%;"><span>DATE</span></li>
+                    <li style="width:45%;"><span>LOCATION</span></li>
+                    <li style="width:20%; justify-content: center;"><span>INSPECTION</span></li>
+                    <li style="width:20%; justify-content: center;"><span>REPORT</span></li>
+                </ul>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <ul>
+                            <li style="width:15%;">@item.inspectorPlanning.date.ToString("dd/MM/yyyy")</li>
+                            <li style="width:45%;">@item.location.name</li>
+                            <li style="width:20%; justify-content: center;">
+                                <a href="#"><i class='bx bxs-check-circle color-green'></i></a>
+                            </li>
+                            <li style="width:20%; justify-content: center;">
+                                @if (!string.IsNullOrEmpty(item.inspectorPlanning.reportFilePath))
+                                {
+                                    <a href="https://auth.waman.app/@item.inspectorPlanning.reportFilePath" target="_blank"><i class='bx bxs-file-pdf color-red'></i></a>
+                                }
+                                else
+                                {
+                                    <span>Not available</span>
+                                }
+                            </li>
+                        </ul>
+                    }
+                }
+                else
+                {
+                    <p class="text-center mt-10 mb-10">No inspections found for the selected filters.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Reset filter functionality
+    document.getElementById("resetFilter").addEventListener("click", function () {
+        const form = document.getElementById("filter");
+        form.reset();
+        window.location.href = '@Url.Action("InspectionArchive", "Home")';
+    });
+</script>

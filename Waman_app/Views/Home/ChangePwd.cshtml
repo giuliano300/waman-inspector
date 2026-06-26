@@ -1,0 +1,163 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAMAN - Login</title>
+
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css" rel="stylesheet">
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/style.css" rel="stylesheet" />
+
+    <!--favicon-->
+    <link rel="apple-touch-icon" sizes="57x57" href="/Images/Favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/Images/Favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/Images/Favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/Images/Favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/Images/Favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/Images/Favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/Images/Favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/Images/Favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/Images/Favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/Images/Favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/Images/Favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/Images/Favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/Images/Favicon/favicon-16x16.png">
+    <link rel="manifest" href="/Images/Favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/Images/Favicon/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <!--end favicon-->
+
+    @Scripts.Render("~/bundles/jquery")
+
+</head>
+<body class="body-home">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4"></div>
+            <div class="col-md-4">
+
+                <div class="container-login">
+
+                    <div class="login-logo">
+                        <a href="/"><img src="~/Images/Logo.png" alt="Waman" /></a>
+                    </div>
+
+                    <div class="login-form">
+                        <form action="" method="post" onsubmit="return false">
+                            <ul>
+                                <li>
+                                    <input type="password" placeholder="New password" id="pwd" required name="pwd" />
+                                    <small id="pwdError" class="error-message" style="color: red; display: none;">The password must contain at least 8 characters, one uppercase letter, one lowercase letter and a number.</small>
+                                </li>
+                                <li>
+                                    <input type="password" placeholder="Repeat password" id="newPwd" required name="newPwd" />
+                                    <small id="newPwdError" class="error-message" style="color: red; display: none;">The passwords do not match.</small>
+                                </li>
+                                <li>
+                                    <input type="submit" value="CHANGE PASSWORD" class="mt-20" onclick="return validatePassword();" />
+                                </li>
+                                <li class="mt-40 textsize-5">Problems with login?<br />contact the administrator at <a href="mailto:info@waman.app"><strong>info@waman.app</strong></a></li>
+                            </ul>
+                            <input type="hidden" name="g" value="@ViewBag.g" class="g" />
+                        </form>
+                    </div>
+                </div>
+
+                <div class="login-footer">
+                    © @DateTime.Now.Year - WAMAN <a href="mailto:info@waman.app">info@waman.app</a>.
+                </div>
+
+            </div>
+            <div class="col-md-4"></div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="confirmModalRequest" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="confirmModalLabel">Request Sended</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modal-r">
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/Scripts/jquery.unobtrusive-ajax.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function validatePassword() {
+            const password = document.getElementById("pwd").value;
+            const confirmPassword = document.getElementById("newPwd").value;
+
+            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+            const pwdError = document.getElementById("pwdError");
+            const newPwdError = document.getElementById("newPwdError");
+            pwdError.style.display = "none";
+            newPwdError.style.display = "none";
+
+            if (!passwordRegex.test(password)) {
+                pwdError.style.display = "block";
+                return false;
+            }
+
+            if (password !== confirmPassword) {
+                newPwdError.style.display = "block";
+                return false;
+            }
+
+            return ChangePwd();
+        }
+
+
+        function ChangePwd() {
+
+            if ($('.email').val() == "")
+                return false;
+
+            $.get('/Home/SaveChangePwd?pwd=' + $('#pwd').val() + "&guid=" + $('.g').val(), function (res) {
+                if (res)
+                    OnSuccess();
+                else
+                    OnFailure();
+            })
+
+            return true;
+        }
+
+
+
+        function OnSuccess() {
+            $('#pwd').val('');
+            $('#newPwd').val('');
+            $('#confirmModalRequest').modal('show');
+            $('#modal-r').html('The password has been successfully changed!.<br><a href="/">Return to login</a>');
+        }
+
+        function OnFailure() {
+            $('#pwd').val('');
+            $('#newPwd').val('');
+            $('#confirmModalRequest').modal('show');
+            $('#modal-r').html('There was an error sending the request. Please try again!');
+        }
+    </script>
+</body>
+</html>

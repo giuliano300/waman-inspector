@@ -1,0 +1,330 @@
+﻿@using Waman_app.Models
+@model CompleteInspectorPlanning
+@{
+    ViewBag.Title = "InspectionStep1";
+}
+
+<style>
+    .span-sig{
+        display: none;
+    }
+
+    .img-sig {
+        display: block;
+        max-height:95%;
+        max-width:95%;
+    }
+
+    .img-none {
+        display: none;
+    }
+
+    .span-show {
+        display: block;
+    }
+</style>
+
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mt-30">@Model.location.name</h1>
+    </div>
+    <div class="col-md-12">
+        <h4 class="mt-15 mb-10 color-azure">ENTITY REPRESENTATIVE</h4>
+        <div class="flex-start">
+            <section class="flex-start textsize-5">
+                <p class="mr-20">
+                    <strong>Name & Surname:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
+                    <strong>Date:</strong>&nbsp;<span>@Model.inspectorPlanning.date.ToString("dd/MM/yyyy")</span>
+                </p>
+                <p class="mr-20">
+                    <strong>Job Title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
+                    <strong>Time:</strong>&nbsp;<span>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</span>
+                </p>
+            </section>
+        </div>
+    </div>
+</div>
+
+<form method="post" action="/Home/SaveInspectionStep1" id="inspectionForm">
+    <input type="hidden" name="inspectorPlanningId" value="@Model.inspectorPlanning.id" />
+    <div class="page-list mt-30">
+        <div class="row">
+            <div class="col-md-12">
+                <h4 class="line-top color-azure">WORKERS LIST</h4>
+            </div>
+            <div class="col-md-12">
+                <div class="site-table site-table-inspection site-table-form">
+                    <ul class="site-table__top">
+                        <li style="width:23%;"><span>NAME</span></li>
+                        <li style="width:10%;"><span>MOBILE</span></li>
+                        <li style="width:10%;"><span>ID CARD</span></li>
+                        <li style="width:15%; justify-content: center;"><span>TIME SHEET</span></li>
+                        <li style="width: 15%; justify-content: center;"><span>FOUND AT WORK</span></li>
+                        <li style="width:20%;"><span>OTHER ISSUES</span></li>
+                        <li style="width:12%;"><span>SIGNATURE</span></li>
+                    </ul>
+                    @if (Model.details != null && Model.details.Any())
+                    {
+                        foreach (var detail in Model.details)
+                        {
+                            <ul>
+                                <li style="width:23%;">@detail.worker.name @detail.worker.lastName</li>
+                                <li style="width:10%;">@detail.worker.mobile</li>
+                                <li style="width:10%;">@detail.worker.idCardNumber</li>
+                                <li style="width:15%; justify-content: center;">
+                                    <div class="flex-between">
+                                        <section class="text-center mr-15">
+                                            <label>
+                                                YES<br />
+                                                <input type="radio" name="timeSheet_@detail.det.id" value="true" required @(detail.det.timeSheet == true ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                        <section class="text-center ml-15">
+                                            <label>
+                                                NO<br />
+                                                <input type="radio" name="timeSheet_@detail.det.id" value="false" required @(detail.det.timeSheet == false ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                    </div>
+                                </li>
+                                <li style="width:15%; justify-content: center;">
+                                    <div class="flex-between">
+                                        <section class="text-center mr-15">
+                                            <label>
+                                                YES<br />
+                                                <input type="radio" name="foundAtWork_@detail.det.id" value="true" required @(detail.det.foundAtWork == true ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                        <section class="text-center ml-15">
+                                            <label>
+                                                NO<br />
+                                                <input type="radio" name="foundAtWork_@detail.det.id" value="false" required @(detail.det.foundAtWork == false ? "checked" : "") />
+                                            </label>
+                                        </section>
+                                    </div>
+                                </li>
+                                <li style="width:20%;">
+                                    <textarea name="otherIssues_@detail.det.id">@detail.det.otherIssues</textarea>
+                                </li>
+                                <li style="width:12%;" class="flex" onclick="OpenPopupSignature('.signature-popup',@detail.det.id)">
+                                    @if (@detail.det.signature == null)
+                                    {
+                                        <img class="img-sig-@detail.det.id img-sig img-none" src="" />
+                                        <span class="span-show span-sig span-sig-@detail.det.id"><i class="bx bx-plus-circle color-green"></i></span>
+                                    }
+                                    else
+                                    {
+                                        <img class="img-sig-@detail.det.id img-sig" src="@detail.det.signature" />
+                                    }
+                                    <input type="hidden" name="himg_sig_@detail.det.id" class="himg-sig-@detail.det.id" />
+                                </li>
+                            </ul>
+                        }
+                    }
+                    else
+                    {
+                        <ul>
+                            <li style="width:100%; text-align:center;">No workers assigned to this location.</li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="row mt-30">
+            <div class="col-md-12">
+                <div class="flex-column">
+                    <h4 class="color-blue mb-10 mt-10">INSPECTOR COMMENTS:</h4>
+                    <textarea class="entity-comments" placeholder="Write a note or comment here..." name="comments">@Model.inspectorPlanning.comments</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12 mt-15">
+            <div class="flex-between">
+                <a href="/Home/InspectionPlan" class="back-button"><i class='bx bx-chevron-left'></i>BACK</a>
+                <button type="submit" class="next-button">ENTITY DECLARATION <i class='bx bx-chevron-right'></i></button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- popup della firma -->
+<div class="container-popup signature-popup">
+    <section>
+        <a class="close-popup" onclick="ClosePopup('.signature-popup')"><i class='bx bx-x'></i></a>
+        <div class="flex-column">
+            <h5 class="color-blue mb-10">Sign here and confirm</h5>
+            <canvas id="sig-canvas-1">
+                Your browser does not support the canvas element.
+            </canvas>
+            <div class="mt-10">
+                <button class="btn-sign background-green mr-10" id="sig-submitBtn"><i class='bx bx-check'></i>&nbsp;Confirm Signature</button>
+                <button class="btn-sign background-red" id="sig-clearBtn"><i class='bx bx-reset'></i>&nbsp;Clear Signature</button>
+            </div>
+        </div>
+    </section>
+    <input type="hidden" name="id" class="sig-id" />
+</div>
+
+
+<script>
+
+    (function () {
+
+        const canvas = document.getElementById("sig-canvas-1");
+        let ctx = null;
+
+        if (canvas != null) {
+            ctx = canvas.getContext("2d");
+            ctx.strokeStyle = "#222222";
+            ctx.lineWidth = 1;
+            const sigSubmitBtn = document.getElementById("sig-submitBtn");
+            const sigClearBtn = document.getElementById("sig-clearBtn");
+
+            let drawing = false;
+            let lastPos = { x: 0, y: 0 };
+
+            // Funzione per ottenere le coordinate del mouse o del tocco
+            function getPosition(event) {
+                const rect = canvas.getBoundingClientRect();
+                if (event.touches) {
+                    return {
+                        x: event.touches[0].clientX - rect.left,
+                        y: event.touches[0].clientY - rect.top
+                    };
+                }
+                return {
+                    x: event.clientX - rect.left,
+                    y: event.clientY - rect.top
+                };
+            }
+
+            // Funzione per iniziare a disegnare
+            function startDrawing(event) {
+                drawing = true;
+                lastPos = getPosition(event);
+            }
+
+            // Funzione per fermare il disegno
+            function stopDrawing() {
+                drawing = false;
+            }
+
+            // Funzione per disegnare
+            function draw(event) {
+                if (!drawing) return;
+                const pos = getPosition(event);
+                ctx.beginPath();
+                ctx.moveTo(lastPos.x, lastPos.y);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.stroke();
+                ctx.closePath();
+                lastPos = pos;
+            }
+
+            // Eventi per mouse
+            canvas.addEventListener("mousedown", startDrawing);
+            canvas.addEventListener("mousemove", draw);
+            canvas.addEventListener("mouseup", stopDrawing);
+            canvas.addEventListener("mouseleave", stopDrawing);
+
+            // Eventi per touch
+            canvas.addEventListener("touchstart", (e) => {
+                e.preventDefault();
+                startDrawing(e);
+            });
+            canvas.addEventListener("touchmove", (e) => {
+                e.preventDefault();
+                draw(e);
+            });
+            canvas.addEventListener("touchend", (e) => {
+                e.preventDefault();
+                stopDrawing();
+            });
+
+            // Pulsante per cancellare la firma
+            sigClearBtn.addEventListener("click", function () {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvas.style.display = "block";
+                boxSignature.style.display = "block";
+            });
+
+            // Pulsante per confermare la firma
+            sigSubmitBtn.addEventListener("click", function () {
+
+                let id = $('.sig-id').val();
+                if (id == undefined)
+                    return;
+
+                const sigImage = $(".img-sig-" + id);
+                const hsigImage = $(".himg-sig-" + id);
+                const spanSignature = $(".span-sig-" + id);
+
+
+                const dataUrl = canvas.toDataURL("image/png");
+                sigImage.attr('src', dataUrl);
+                hsigImage.val(dataUrl);
+
+                sigImage.removeClass('img-none');
+
+                spanSignature.removeClass('span-show');
+                ClosePopup(".signature-popup");
+
+                $('.sig-id').val('');
+            });
+        }
+    })();
+
+    // Funzione per chiudere un popup specifico
+    function ClosePopup(selector) {
+        const popup = document.querySelector(selector);
+        if (!popup) return;
+
+        popup.style.opacity = '1';
+        popup.style.transition = 'opacity 0.3s ease';
+
+        // Avviamo l'animazione di fade-out
+        requestAnimationFrame(() => {
+            popup.style.opacity = '0';
+            setTimeout(() => {
+                // Dopo la transizione nascondiamo l'elemento
+                popup.style.visibility = 'hidden';
+                popup.style.display = 'none';
+            }, 300);
+        });
+
+        // Ripristina lo scroll sul body
+        document.body.classList.remove('no-scroll');
+    }
+
+
+    // Funzione per aprire un popup specifico
+    function OpenPopupSignature(selector, id) {
+        const canvas = document.getElementById("sig-canvas-1");
+       let ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const popup = document.querySelector(selector);
+        if (!popup) return;
+
+        $('.sig-id').val(id);
+
+        // All'inizio impostiamo lo stile a display: block e opacity 0
+        popup.style.display = 'flex';
+        popup.style.visibility = 'visible';
+        popup.style.opacity = '0';
+        popup.style.transition = 'opacity 0.3s ease';
+
+        popup.offsetHeight;
+
+        // Forziamo l'animazione con requestAnimationFrame
+        requestAnimationFrame(() => {
+            popup.style.opacity = '1'; // Fai il fade-in
+        });
+
+        // Previene lo scroll del body
+        document.body.classList.add('no-scroll');
+    }
+
+</script>
