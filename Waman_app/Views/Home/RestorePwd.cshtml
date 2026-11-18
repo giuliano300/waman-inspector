@@ -1,4 +1,4 @@
-﻿
+
 @{
     Layout = null;
 }
@@ -8,7 +8,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width" />
-    <title>WAMAN - Login</title>
+    <title>WAMAN - Password recovery</title>
 
     <!--favicon-->
     <link rel="apple-touch-icon" sizes="57x57" href="/Images/Favicon/apple-icon-57x57.png">
@@ -30,59 +30,50 @@
     <meta name="theme-color" content="#ffffff">
     <!--end favicon-->
 
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css" rel="stylesheet">
+    <link rel="preload" href="/Content/phosphor/Phosphor.woff2" as="font" type="font/woff2" crossorigin />
+    <link href="/Content/phosphor/style.css?ver=2.1.2" rel="stylesheet" />
     <link href="~/Content/bootstrap.css" rel="stylesheet" />
     <link href="~/Content/style.css" rel="stylesheet" />
+    <link href="~/Content/inspector-v3.css?ver=7.4" rel="stylesheet" />
     @Scripts.Render("~/bundles/jquery")
 
 </head>
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3"></div>
-            <div class="col-md-6">
-
-                <div class="container-login">
-
-                    <div class="login-logo">
-                        <img src="~/Images/Logo.png" alt="Waman" />
-                    </div>
-
-                    <div class="login-form">
-                        <form action="" method="post" onsubmit="return false">
-                            <ul>
-                                <li>
-                                    <input type="email" placeholder="Email" required name="email" class="email" />
-                                </li>
-                                <li>
-                                    Enter your login email to recover your password.<br />
-                                    If you know your credentials instead <a href="/Home/Index"><strong>click here</strong></a><br /> to return to login.
-                                </li>
-                                <li>
-                                    <input type="submit" value="RESTORE PASSWORD" class="mt-20" onclick="RequestChange()" />
-                                </li>
-                            </ul>
-                        </form>
-                    </div>
-
-                </div>
-
-                <div class="login-footer">
-                    © @DateTime.Now.Year - WAMAN <a href="mailto:info@waman.app">info@waman.app</a>.
-                </div>
-
-            </div>
-            <div class="col-md-3"></div>
+<body class="auth-page">
+    <aside class="auth-brand">
+        <a href="/" class="auth-brand__logo"><img src="~/Images/Logo.png" alt="Waman" width="190" height="72" /></a>
+        <div class="auth-brand__copy">
+            <span>Account recovery</span>
+            <h1>Get back to your workspace.</h1>
+            <p>We will send secure password recovery instructions to your registered email address.</p>
         </div>
+        <div class="auth-brand__footer">&copy; @DateTime.Now.Year District Operations Ltd</div>
+    </aside>
 
-    </div>
+    <main class="auth-panel">
+        <section class="auth-card">
+            <a href="/" class="auth-mobile-logo"><img src="~/Images/Logo.png" alt="Waman" width="150" height="57" /></a>
+            <span class="auth-card__eyebrow">Password recovery</span>
+            <h2>Reset access</h2>
+            <p class="auth-card__intro">Enter the email address associated with your inspector account.</p>
+            <form action="" method="post" onsubmit="RequestChange(); return false;">
+                <div class="auth-field">
+                    <label for="recoveryEmail">Email address</label>
+                    <div class="auth-field__control">
+                        <i class="ph ph-envelope-simple ui-icon"></i>
+                        <input id="recoveryEmail" type="email" placeholder="name@example.com" required name="email" class="email" autocomplete="email" />
+                    </div>
+                </div>
+                <button type="submit" class="auth-submit">Send recovery email</button>
+                <p class="auth-back">Remember your credentials? <a href="/Home/Index">Return to sign in</a></p>
+            </form>
+        </section>
+    </main>
 
     <div class="modal fade" id="confirmModalRequest" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="confirmModalLabel">Request Sended</h4>
+                    <h4 class="modal-title" id="confirmModalLabel">Recovery request</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modal-r">
@@ -95,7 +86,7 @@
         </div>
     </div>
     <script src="~/Scripts/jquery.unobtrusive-ajax.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
 
 
     <script>
@@ -114,15 +105,16 @@
 
         function OnSuccess() {
             $('.email').val('');
-            $('#confirmModalRequest').modal('show');
             $('#modal-r').html('We have sent an email to your address for the password recovery procedure.');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModalRequest')).show();
         }
 
         function OnFailure() {
             $('.email').val('');
-            $('#confirmModalRequest').modal('show');
             $('#modal-r').html('There was an error sending the request. Please try again!');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModalRequest')).show();
         }
     </script>
+    @Html.Partial("_AppFooter")
 </body>
 </html>

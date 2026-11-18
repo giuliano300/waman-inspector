@@ -1,15 +1,15 @@
-﻿@using Waman_app.Models
+@using Waman_app.Models
 @model List<InfoBoxToInspectors>
 
 @{
     ViewBag.Title = "InfoBox";
 }
 
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="text-center mt-30 mb-30">
-            Info box<br />
-        </h1>
+<div class="page-heading page-hero">
+    <div>
+        <span class="page-heading__eyebrow">Notices and updates</span>
+        <h1>Info box</h1>
+        <p>Operational information shared with inspectors.</p>
     </div>
 </div>
 
@@ -33,7 +33,7 @@
         }
         else
         {
-            <p class="text-center">No information available.</p>
+            <div class="empty-state info-empty"><i class="ph ph-chat-teardrop-text ui-icon"></i><h2>Nothing new</h2><p>No information is available right now.</p></div>
         }
     </div>
 </div>

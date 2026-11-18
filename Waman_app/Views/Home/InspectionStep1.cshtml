@@ -1,7 +1,7 @@
-﻿@using Waman_app.Models
+@using Waman_app.Models
 @model CompleteInspectorPlanning
 @{
-    ViewBag.Title = "InspectionStep1";
+    ViewBag.Title = "Inspection details";
 }
 
 <style>
@@ -24,145 +24,134 @@
     }
 </style>
 
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="mt-30">@Model.location.name</h1>
+<div class="inspection-heading page-hero page-hero--with-meta">
+    <div>
+        <span class="page-heading__eyebrow">Inspection details</span>
+        <h1>@Model.location.name</h1>
+        <p><i class="ph ph-map-pin ui-icon"></i> @Model.location.address</p>
     </div>
-    <div class="col-md-12">
-        <h4 class="mt-15 mb-10 color-azure">ENTITY REPRESENTATIVE</h4>
-        <div class="flex-start">
-            <section class="flex-start textsize-5">
-                <p class="mr-20">
-                    <strong>Name & Surname:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
-                    <strong>Date:</strong>&nbsp;<span>@Model.inspectorPlanning.date.ToString("dd/MM/yyyy")</span>
-                </p>
-                <p class="mr-20">
-                    <strong>Job Title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
-                    <strong>Time:</strong>&nbsp;<span>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</span>
-                </p>
-            </section>
-        </div>
+    <div class="inspection-heading__meta">
+        <span><small>Date</small><strong>@Model.inspectorPlanning.date.ToString("dd MMM yyyy")</strong></span>
+        <span><small>Time</small><strong>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</strong></span>
+        <span><small>Representative</small><strong>@Model.location.entityRapresentative</strong></span>
     </div>
 </div>
 
-<form method="post" action="/Home/SaveInspectionStep1" id="inspectionForm">
+<form method="post" action="/Home/SaveInspectionStep1" id="inspectionForm" class="inspection-workflow">
     <input type="hidden" name="inspectorPlanningId" value="@Model.inspectorPlanning.id" />
-    <div class="page-list mt-30">
+    <div class="inspection-form">
         <div class="row">
             <div class="col-md-12">
-                <h4 class="line-top color-azure">WORKERS LIST</h4>
+                <div class="section-heading">
+                    <div><span>Step 1 of 2</span><h2>Workers on site</h2></div>
+                    <p>Complete attendance details and collect signatures.</p>
+                </div>
             </div>
             <div class="col-md-12">
-                <div class="site-table site-table-inspection site-table-form">
-                    <ul class="site-table__top">
-                        <li style="width:23%;"><span>NAME</span></li>
-                        <li style="width:10%;"><span>MOBILE</span></li>
-                        <li style="width:10%;"><span>ID CARD</span></li>
-                        <li style="width:15%; justify-content: center;"><span>TIME SHEET</span></li>
-                        <li style="width: 15%; justify-content: center;"><span>FOUND AT WORK</span></li>
-                        <li style="width:20%;"><span>OTHER ISSUES</span></li>
-                        <li style="width:12%;"><span>SIGNATURE</span></li>
-                    </ul>
+                <div class="worker-list">
                     @if (Model.details != null && Model.details.Any())
                     {
                         foreach (var detail in Model.details)
                         {
-                            <ul>
-                                <li style="width:23%;">@detail.worker.name @detail.worker.lastName</li>
-                                <li style="width:10%;">@detail.worker.mobile</li>
-                                <li style="width:10%;">@detail.worker.idCardNumber</li>
-                                <li style="width:15%; justify-content: center;">
-                                    <div class="flex-between">
-                                        <section class="text-center mr-15">
-                                            <label>
-                                                YES<br />
-                                                <input type="radio" name="timeSheet_@detail.det.id" value="true" required @(detail.det.timeSheet == true ? "checked" : "") />
-                                            </label>
-                                        </section>
-                                        <section class="text-center ml-15">
-                                            <label>
-                                                NO<br />
-                                                <input type="radio" name="timeSheet_@detail.det.id" value="false" required @(detail.det.timeSheet == false ? "checked" : "") />
-                                            </label>
-                                        </section>
+                            <article class="worker-card">
+                                <header class="worker-card__header">
+                                    <span class="worker-card__avatar"><i class="ph ph-user-circle ui-icon"></i></span>
+                                    <div class="worker-card__identity">
+                                        <h3>@detail.worker.name @detail.worker.lastName</h3>
+                                        <div class="worker-card__meta">
+                                            <span><i class="ph ph-phone ui-icon"></i> @detail.worker.mobile</span>
+                                            <span><i class="ph ph-identification-card ui-icon"></i> @detail.worker.idCardNumber</span>
+                                        </div>
                                     </div>
-                                </li>
-                                <li style="width:15%; justify-content: center;">
-                                    <div class="flex-between">
-                                        <section class="text-center mr-15">
-                                            <label>
-                                                YES<br />
-                                                <input type="radio" name="foundAtWork_@detail.det.id" value="true" required @(detail.det.foundAtWork == true ? "checked" : "") />
-                                            </label>
-                                        </section>
-                                        <section class="text-center ml-15">
-                                            <label>
-                                                NO<br />
-                                                <input type="radio" name="foundAtWork_@detail.det.id" value="false" required @(detail.det.foundAtWork == false ? "checked" : "") />
-                                            </label>
-                                        </section>
-                                    </div>
-                                </li>
-                                <li style="width:20%;">
-                                    <textarea name="otherIssues_@detail.det.id">@detail.det.otherIssues</textarea>
-                                </li>
-                                <li style="width:12%;" class="flex" onclick="OpenPopupSignature('.signature-popup',@detail.det.id)">
+                                    <button type="button" class="worker-signature" onclick="OpenPopupSignature('.signature-popup',@detail.det.id)">
                                     @if (@detail.det.signature == null)
                                     {
                                         <img class="img-sig-@detail.det.id img-sig img-none" src="" />
-                                        <span class="span-show span-sig span-sig-@detail.det.id"><i class="bx bx-plus-circle color-green"></i></span>
+                                            <span class="span-show span-sig span-sig-@detail.det.id"><i class="ph ph-signature ui-icon"></i><em>Add signature</em></span>
                                     }
                                     else
                                     {
                                         <img class="img-sig-@detail.det.id img-sig" src="@detail.det.signature" />
                                     }
                                     <input type="hidden" name="himg_sig_@detail.det.id" class="himg-sig-@detail.det.id" />
-                                </li>
-                            </ul>
+                                    </button>
+                                </header>
+                                <div class="worker-card__body">
+                                    <fieldset class="decision-field">
+                                        <legend>Timesheet available?</legend>
+                                        <div class="segmented-control">
+                                            <label><input type="radio" name="timeSheet_@detail.det.id" value="true" required @(detail.det.timeSheet == true ? "checked" : "") /><span>Yes</span></label>
+                                            <label><input type="radio" name="timeSheet_@detail.det.id" value="false" required @(detail.det.timeSheet == false ? "checked" : "") /><span>No</span></label>
+                                        </div>
+                                    </fieldset>
+                                    <fieldset class="decision-field">
+                                        <legend>Worker found on site?</legend>
+                                        <div class="segmented-control">
+                                            <label><input type="radio" name="foundAtWork_@detail.det.id" value="true" required @(detail.det.foundAtWork == true ? "checked" : "") /><span>Yes</span></label>
+                                            <label><input type="radio" name="foundAtWork_@detail.det.id" value="false" required @(detail.det.foundAtWork == false ? "checked" : "") /><span>No</span></label>
+                                        </div>
+                                    </fieldset>
+                                    <div class="worker-card__issues">
+                                        <label for="issues_@detail.det.id">Other issues <small>Optional</small></label>
+                                        <textarea id="issues_@detail.det.id" name="otherIssues_@detail.det.id" placeholder="Add a note...">@detail.det.otherIssues</textarea>
+                                    </div>
+                                </div>
+                            </article>
                         }
                     }
                     else
                     {
-                        <ul>
-                            <li style="width:100%; text-align:center;">No workers assigned to this location.</li>
-                        </ul>
+                        <div class="empty-state"><i class="ph ph-user-minus ui-icon"></i><p>No workers assigned to this location.</p></div>
                     }
                 </div>
             </div>
         </div>
-        <div class="row mt-30">
+        <div class="row mt-20">
             <div class="col-md-12">
-                <div class="flex-column">
-                    <h4 class="color-blue mb-10 mt-10">INSPECTOR COMMENTS:</h4>
-                    <textarea class="entity-comments" placeholder="Write a note or comment here..." name="comments">@Model.inspectorPlanning.comments</textarea>
+                <div class="form-card">
+                    <label for="inspectorComments">Inspector comments <small>Optional</small></label>
+                    <textarea id="inspectorComments" class="entity-comments" placeholder="Add notes about this inspection..." name="comments">@Model.inspectorPlanning.comments</textarea>
                 </div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-md-12 mt-15">
-            <div class="flex-between">
-                <a href="/Home/InspectionPlan" class="back-button"><i class='bx bx-chevron-left'></i>BACK</a>
-                <button type="submit" class="next-button">ENTITY DECLARATION <i class='bx bx-chevron-right'></i></button>
-            </div>
+    <div class="inspection-action-dock" role="group" aria-label="Inspection actions">
+        <div class="inspection-actions">
+            <a href="/Home/InspectionPlan" class="back-button"><i class="ph ph-caret-left ui-icon"></i>Back</a>
+            <span class="inspection-action-dock__status"><small>Step 1 of 2</small><strong>Workers and attendance</strong></span>
+            <button type="submit" class="next-button">Continue to declaration <i class="ph ph-caret-right ui-icon"></i></button>
         </div>
     </div>
 </form>
 
 <!-- popup della firma -->
-<div class="container-popup signature-popup">
-    <section>
-        <a class="close-popup" onclick="ClosePopup('.signature-popup')"><i class='bx bx-x'></i></a>
-        <div class="flex-column">
-            <h5 class="color-blue mb-10">Sign here and confirm</h5>
-            <canvas id="sig-canvas-1">
-                Your browser does not support the canvas element.
-            </canvas>
-            <div class="mt-10">
-                <button class="btn-sign background-green mr-10" id="sig-submitBtn"><i class='bx bx-check'></i>&nbsp;Confirm Signature</button>
-                <button class="btn-sign background-red" id="sig-clearBtn"><i class='bx bx-reset'></i>&nbsp;Clear Signature</button>
+<div class="container-popup signature-popup" role="dialog" aria-modal="true" aria-labelledby="signature-dialog-title">
+    <section class="signature-dialog">
+        <header class="signature-dialog__header">
+            <span class="signature-dialog__icon"><i class="ph ph-signature ui-icon"></i></span>
+            <div class="signature-dialog__copy">
+                <span class="signature-dialog__eyebrow">Worker confirmation</span>
+                <h2 id="signature-dialog-title">Add signature</h2>
+                <p>Sign naturally with a finger or stylus inside the area below.</p>
+            </div>
+            <button type="button" class="close-popup" aria-label="Close signature" onclick="ClosePopup('.signature-popup')"><span class="signature-dialog__close-glyph" aria-hidden="true">&times;</span></button>
+        </header>
+        <div class="signature-dialog__body">
+            <div class="signature-dialog__canvas-heading">
+                <strong>Signature area</strong>
+                <span>Keep the signature above the line</span>
+            </div>
+            <div class="signature-dialog__canvas-wrap">
+                <canvas id="sig-canvas-1">
+                    Your browser does not support the canvas element.
+                </canvas>
+                <span class="signature-dialog__line" aria-hidden="true"></span>
             </div>
         </div>
+        <footer class="signature-dialog__actions">
+            <button type="button" class="btn-sign signature-dialog__clear" id="sig-clearBtn"><i class="ph ph-eraser ui-icon"></i>Clear</button>
+            <button type="button" class="btn-sign signature-dialog__confirm" id="sig-submitBtn"><i class="ph ph-check-circle ui-icon"></i>Confirm signature</button>
+        </footer>
     </section>
     <input type="hidden" name="id" class="sig-id" />
 </div>
@@ -184,19 +173,22 @@
 
             let drawing = false;
             let lastPos = { x: 0, y: 0 };
+            canvas.dataset.hasInk = "false";
 
             // Funzione per ottenere le coordinate del mouse o del tocco
             function getPosition(event) {
                 const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
                 if (event.touches) {
                     return {
-                        x: event.touches[0].clientX - rect.left,
-                        y: event.touches[0].clientY - rect.top
+                        x: (event.touches[0].clientX - rect.left) * scaleX,
+                        y: (event.touches[0].clientY - rect.top) * scaleY
                     };
                 }
                 return {
-                    x: event.clientX - rect.left,
-                    y: event.clientY - rect.top
+                    x: (event.clientX - rect.left) * scaleX,
+                    y: (event.clientY - rect.top) * scaleY
                 };
             }
 
@@ -221,6 +213,7 @@
                 ctx.stroke();
                 ctx.closePath();
                 lastPos = pos;
+                canvas.dataset.hasInk = "true";
             }
 
             // Eventi per mouse
@@ -246,16 +239,20 @@
             // Pulsante per cancellare la firma
             sigClearBtn.addEventListener("click", function () {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                canvas.style.display = "block";
-                boxSignature.style.display = "block";
+                canvas.dataset.hasInk = "false";
             });
 
             // Pulsante per confermare la firma
             sigSubmitBtn.addEventListener("click", function () {
 
                 let id = $('.sig-id').val();
-                if (id == undefined)
+                if (!id)
                     return;
+
+                if (canvas.dataset.hasInk !== "true") {
+                    ShowMessage("Signature required", "Please sign in the box before confirming.");
+                    return;
+                }
 
                 const sigImage = $(".img-sig-" + id);
                 const hsigImage = $(".himg-sig-" + id);
@@ -302,8 +299,7 @@
     // Funzione per aprire un popup specifico
     function OpenPopupSignature(selector, id) {
         const canvas = document.getElementById("sig-canvas-1");
-       let ctx = canvas.getContext("2d");
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let ctx = canvas.getContext("2d");
 
         const popup = document.querySelector(selector);
         if (!popup) return;
@@ -317,6 +313,17 @@
         popup.style.transition = 'opacity 0.3s ease';
 
         popup.offsetHeight;
+
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = Math.round(rect.width * ratio);
+        canvas.height = Math.round(rect.height * ratio);
+        ctx.strokeStyle = "#172033";
+        ctx.lineWidth = 2.25 * ratio;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.dataset.hasInk = "false";
 
         // Forziamo l'animazione con requestAnimationFrame
         requestAnimationFrame(() => {

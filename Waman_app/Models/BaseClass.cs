@@ -7,6 +7,7 @@ using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 
 namespace Waman_app.Models
@@ -20,6 +21,8 @@ namespace Waman_app.Models
         //BACKEND HUB
         public static string apiUri = "https://auth.waman.app/api/";
         public static string apiUriLocal = "https://auth.waman.app/api/";
+
+        private static readonly HttpClient SharedHttpClient = CreateHttpClient();
 
 
 
@@ -59,33 +62,31 @@ namespace Waman_app.Models
             return results;
         }
 
-        public static async Task<HttpResponseMessage> HttpClientSend(string type, string url, object o = null)
+        private static HttpClient CreateHttpClient()
         {
             var client = new HttpClient();
             client.BaseAddress = new Uri(apiUri);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            AddAuthorizationHeader(client);
             client.Timeout = TimeSpan.FromMinutes(30);
+            return client;
+        }
 
-            HttpResponseMessage r = new HttpResponseMessage();
-            switch (type.ToUpper())
+        public static async Task<HttpResponseMessage> HttpClientSend(string type, string url, object o = null)
+        {
+            var method = new HttpMethod(type.ToUpperInvariant());
+            using (var request = new HttpRequestMessage(method, url))
             {
-                case "POST":
-                    r = await client.PostAsJsonAsync(url, o);
-                    break;
-                case "PUT":
-                    r = await client.PutAsJsonAsync(url, o);
-                    break;
-                case "GET":
-                    r = await client.GetAsync(url);
-                    break;
-                default:
-                    break;
+                AddAuthorizationHeader(request);
+
+                if (method == HttpMethod.Post || method == HttpMethod.Put)
+                {
+                    var json = JsonConvert.SerializeObject(o);
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                }
+
+                return await SharedHttpClient.SendAsync(request).ConfigureAwait(false);
             }
-
-            return r;
-
         }
 
         public static string NoFoto()
@@ -95,21 +96,29 @@ namespace Waman_app.Models
 
         public static async Task<HttpResponseMessage> HttpClientGet(string url)
         {
-            var client = new HttpClient();
-            client.BaseAddress = new Uri(apiUri);
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-            AddAuthorizationHeader(client);
-
-            var get = await client.GetAsync(url);
-            return get;
+            return await HttpClientSend("GET", url).ConfigureAwait(false);
         }
 
-        private static void AddAuthorizationHeader(HttpClient client)
+        private static void AddAuthorizationHeader(HttpRequestMessage request)
         {
-            var token = System.Web.HttpContext.Current?.Session?[WamanAuthTokenSessionKey] as string;
+            var context = System.Web.HttpContext.Current;
+            var token = context?.Session?[WamanAuthTokenSessionKey] as string;
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                var inspectorCookie = context?.Request?.Cookies?["Inspectors"]?.Value;
+                if (!string.IsNullOrWhiteSpace(inspectorCookie))
+                {
+                    var inspector = JsonConvert.DeserializeObject<Inspectors>(inspectorCookie);
+                    token = inspector?.authToken;
+
+                    if (!string.IsNullOrWhiteSpace(token) && context?.Session != null)
+                        context.Session[WamanAuthTokenSessionKey] = token;
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(token))
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         }
 
         public static string rewriteUrl(string Stringa)

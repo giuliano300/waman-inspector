@@ -1,23 +1,23 @@
-﻿@using Waman_app.Models;
+@using Waman_app.Models;
 @using System.Globalization;
 @model List<CompleteInspectorPlanning>
 
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="text-center mt-30">
-            Inspection Archive<br />
-        </h1>
+<div class="page-heading page-hero">
+    <div>
+        <span class="page-heading__eyebrow">Completed work</span>
+        <h1>Inspection archive</h1>
+        <p>Search past inspections and open their details or report.</p>
     </div>
 </div>
 
-<div class="page-list mt-30">
+<div class="page-list archive-page">
     <div class="row">
         <div class="col-md-12">
             <div class="page-list__header">
                 @using (Html.BeginForm("InspectionArchive", "Home", FormMethod.Get, new { id = "filter" }))
                 {
-                    <div class="flex-start">
-                        <h4 class="color-blue mt-15 mr-10">FILTER BY:</h4>
+                    <div class="archive-filters">
+                        <h4 class="color-blue">Filter by</h4>
 
                         <div class="mr-10">
                             <strong>Location</strong><br />
@@ -43,9 +43,9 @@
                                 }
                             </select>
                         </div>
-                        <div>
-                            <br>
-                            <input type="submit" value="" />
+                        <div class="archive-filter-actions">
+                            <input type="submit" value="" aria-label="Apply filters" title="Apply filters" />
+                            <button id="resetFilter" type="button" class="delete-filter" title="Reset filters"><i class="ph ph-arrow-counter-clockwise ui-icon"></i><span>Reset</span></button>
                         </div>
                     </div>
                 }
@@ -55,18 +55,12 @@
 
     <div class="row">
         <div class="col-md-12">
-            <button id="resetFilter" class="delete-filter"><i class='bx bx-x'></i>RESET FILTER</button>
-        </div>
-    </div>
-
-    <div class="row">
-        <div class="col-md-12">
-            <div class="site-table">
+            <div class="site-table archive-table">
                 <ul class="site-table__top">
                     <li style="width:15%;"><span>DATE</span></li>
                     <li style="width:55%;"><span>LOCATION</span></li>
-                    <li style="width:10%; justify-content: center;"><span>INSPECTION</span></li>
-                    <li style="width:10%; justify-content: center;"><span>DETAIL</span></li>
+                    <li style="width:10%; justify-content: center;"><span>STATUS</span></li>
+                    <li style="width:10%; justify-content: center;"><span>DETAILS</span></li>
                     <li style="width:10%; justify-content: center;"><span>REPORT</span></li>
                 </ul>
                 @if (Model != null && Model.Any())
@@ -77,10 +71,10 @@
                             <li style="width:15%;">@item.inspectorPlanning.date.ToString("dd/MM/yyyy")</li>
                             <li style="width:55%;">@item.location.name</li>
                             <li style="width:10%; justify-content: center;">
-                                <i class='bx bxs-check-circle color-green'></i>
+                                <i class="ph ph-check ui-icon archive-status-icon" role="img" aria-label="Completed" title="Completed"></i>
                             </li>
                             <li style="width:10%; justify-content: center;">
-                                <a href="/Home/InspectionReport/@item.inspectorPlanning.id"><i class='bx bx-message-square-detail'></i></a>
+                                <a class="archive-icon-action" href="/Home/InspectionReport/@item.inspectorPlanning.id" aria-label="View inspection details" title="View details"><i class="ph ph-magnifying-glass ui-icon" aria-hidden="true"></i></a>
                             </li>
                             <li style="width:10%; justify-content: center;">
                                 @if (!string.IsNullOrWhiteSpace(item.inspectorPlanning.reportFilePath))
@@ -97,13 +91,13 @@
                                         + "?e=" + expire
                                         + "&h=" + h;
 
-                                    <a href="@url" target="_blank">
-                                        <i class='bx bxs-file-pdf color-red'></i>
+                                    <a class="archive-icon-action archive-icon-action--report" href="@url" target="_blank" aria-label="Open PDF report" title="Open PDF report">
+                                        <i class="ph ph-download-simple ui-icon" aria-hidden="true"></i>
                                     </a>
                                 }
                                 else
                                 {
-                                    <i class='bx bxs-file-pdf color-grey'></i>
+                                    <span class="archive-icon-action is-disabled" aria-label="Report not available" title="Report not available"><i class="ph ph-minus ui-icon" aria-hidden="true"></i></span>
                                 }
                             </li>
                         </ul>

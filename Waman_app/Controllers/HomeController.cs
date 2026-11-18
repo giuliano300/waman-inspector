@@ -17,6 +17,49 @@ namespace Waman_app.Controllers
 {
     public class HomeController : Controller
     {
+        private sealed class TodayPlansCacheEntry
+        {
+            public DateTime ExpiresUtc { get; set; }
+            public List<CompleteInspectorPlanning> Plans { get; set; }
+        }
+
+        private string GetTodayPlansCacheKey(int inspectorId)
+        {
+            return $"TodayPlans:{inspectorId}:{DateTime.Today:yyyyMMdd}";
+        }
+
+        private async Task<List<CompleteInspectorPlanning>> GetTodayPlansAsync(int inspectorId, bool forceRefresh = false)
+        {
+            string cacheKey = GetTodayPlansCacheKey(inspectorId);
+            var cached = Session[cacheKey] as TodayPlansCacheEntry;
+
+            if (!forceRefresh && cached != null && cached.ExpiresUtc > DateTime.UtcNow)
+                return cached.Plans;
+
+            DateTime today = DateTime.Today;
+            HttpResponseMessage response = await BaseClass.HttpClientSend("GET", $"InspectorPlannings?inspectorId={inspectorId}&day={today.Day}&month={today.Month}&year={today.Year}");
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            var plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>() ?? new List<CompleteInspectorPlanning>();
+            plans = plans.Where(p => p != null && p.inspectorPlanning != null).ToList();
+
+            Session[cacheKey] = new TodayPlansCacheEntry
+            {
+                // Daily plans change infrequently and are invalidated immediately after an inspection is saved.
+                // Keeping them warm avoids repeating the slow remote API call on every tablet page change.
+                ExpiresUtc = DateTime.UtcNow.AddMinutes(2),
+                Plans = plans
+            };
+
+            return plans;
+        }
+
+        private void InvalidateTodayPlansCache(int inspectorId)
+        {
+            Session.Remove(GetTodayPlansCacheKey(inspectorId));
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Logon(Login login)
@@ -146,10 +189,10 @@ namespace Waman_app.Controllers
 
             try
             {
-                HttpResponseMessage response = await BaseClass.HttpClientSend("GET", $"InspectorPlannings?inspectorId={inspector.id}&day={DateTime.Now.Day}&month={DateTime.Now.Month}&year={DateTime.Now.Year}");
-                if (response.IsSuccessStatusCode)
+                var todayPlans = await GetTodayPlansAsync(inspector.id);
+                if (todayPlans != null)
                 {
-                    plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>();
+                    plans = todayPlans;
                     openPlanningsCount = plans.Count(p => !p.inspectorPlanning.closed && !p.inspectorPlanning.deleted);
                     hasTodayInspections = plans.Any(p => p.inspectorPlanning.date.Date == DateTime.Now.Date && !p.inspectorPlanning.closed && !p.inspectorPlanning.deleted);
                 }
@@ -181,25 +224,15 @@ namespace Waman_app.Controllers
             var inspector = JsonConvert.DeserializeObject<Inspectors>(inspectorCookie);
             ViewBag.InspectorId = inspector.id;
 
-            var date = DateTime.Now;
-
-            //bool isInspectionStarted = false;
-
-            // Chiama l'API per ottenere il piano di ispezione completo
-            List<CompleteInspectorPlanning> plans = new List<CompleteInspectorPlanning>();
-            HttpResponseMessage response = await BaseClass.HttpClientSend("GET", $"InspectorPlannings?inspectorId={inspector.id}&day={date.Day}&month={date.Month}&year={date.Year}");
-            if (response.IsSuccessStatusCode)
-            {
-                plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>();
-            }
-            else
+            List<CompleteInspectorPlanning> plans = await GetTodayPlansAsync(inspector.id);
+            if (plans == null)
             {
                 ViewBag.ErrorMessage = "Failed to retrieve the inspection plan.";
                 return View(new List<CompleteInspectorPlanning>());
             }
 
             // Filtra solo le ispezioni non completate
-            plans = plans.Where(p => !p.inspectorPlanning.closed).ToList();
+            plans = plans.Where(p => p != null && p.inspectorPlanning != null && !p.inspectorPlanning.closed).ToList();
 
             return View(plans);
         }
@@ -236,22 +269,26 @@ namespace Waman_app.Controllers
             if (!string.IsNullOrEmpty(f)) query += $"&f={HttpUtility.UrlEncode(f)}";
             if (!string.IsNullOrEmpty(locationName)) query += $"&locationName={HttpUtility.UrlEncode(locationName)}";
 
+            string totalItemsQuery = "InspectorPlannings/TotalItems?inspectorId=" + inspector.id + "&month=" + m + "&year=" + y + "&locationName=" + HttpUtility.UrlEncode(locationName);
+            Task<HttpResponseMessage> plansRequest = BaseClass.HttpClientSend("GET", query);
+            Task<HttpResponseMessage> totalItemsRequest = BaseClass.HttpClientSend("GET", totalItemsQuery);
+            HttpResponseMessage[] responses = await Task.WhenAll(plansRequest, totalItemsRequest);
+
             List<CompleteInspectorPlanning> plans = new List<CompleteInspectorPlanning>();
-            HttpResponseMessage response = await BaseClass.HttpClientSend("GET", query);
+            HttpResponseMessage response = responses[0];
             if (response.IsSuccessStatusCode)
-                plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>();
+                plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>() ?? new List<CompleteInspectorPlanning>();
             else
             {
                 ViewBag.ErrorMessage = "Failed to retrieve the inspection archive.";
                 return View(new List<CompleteInspectorPlanning>());
             }
 
-            if (plans == null)
-                return View(new List<CompleteInspectorPlanning>());
+            plans = plans.Where(p => p != null && p.inspectorPlanning != null).ToList();
 
 
             int totalItems = 0;
-            var get = await BaseClass.HttpClientSend("GET", "InspectorPlannings/TotalItems?inspectorId=" + inspector.id + "&month=" + m + "&year=" + y + "&locationName=" + HttpUtility.UrlEncode(locationName));
+            var get = responses[1];
             if (get.IsSuccessStatusCode)
                 totalItems = await get.Content.ReadAsAsync<int>();
 
@@ -303,6 +340,7 @@ namespace Waman_app.Controllers
             try
             {
                 int planningId = int.Parse(formData["inspectorPlanningId"]);
+                var updateTasks = new List<Task<HttpResponseMessage>>();
 
                 foreach (var key in formData.AllKeys.Where(k => k.StartsWith("timeSheet_")))
                 {
@@ -316,14 +354,16 @@ namespace Waman_app.Controllers
 						signature = formData[$"himg_sig_{detailId}"],
 					};
 
-                    var j = JsonConvert.SerializeObject(updateDto);
-
-                    await BaseClass.HttpClientSend("POST", $"InspectorPlanningDetails/UpdatePartial/{detailId}", updateDto);
+                    updateTasks.Add(BaseClass.HttpClientSend("POST", $"InspectorPlanningDetails/UpdatePartial/{detailId}", updateDto));
                 }
 
                 string comments = formData["comments"];
                 if (!string.IsNullOrEmpty(comments))
-                    await BaseClass.HttpClientSend("POST", $"InspectorPlannings/UpdateComments/{planningId}", comments);
+                    updateTasks.Add(BaseClass.HttpClientSend("POST", $"InspectorPlannings/UpdateComments/{planningId}", comments));
+
+                HttpResponseMessage[] updateResponses = await Task.WhenAll(updateTasks);
+                if (updateResponses.Any(r => !r.IsSuccessStatusCode))
+                    throw new HttpRequestException("One or more inspection details could not be saved.");
 
                 return RedirectToAction("InspectionEnd", new { id = planningId });
             }
@@ -352,11 +392,11 @@ namespace Waman_app.Controllers
                     return RedirectToAction("InspectionPlan");
                 }
 
-                foreach (var detail in inspectionDetails.details)
+                var jobTypeTasks = inspectionDetails.details.Select(async detail =>
                 {
-                    var jobTypeName = await GetJobTypeName(detail.worker.jobTypeId);
-                    detail.jobTypeName = jobTypeName;
-                }
+                    detail.jobTypeName = await GetJobTypeName(detail.worker.jobTypeId);
+                });
+                await Task.WhenAll(jobTypeTasks);
 
                 return View(inspectionDetails);
             }
@@ -378,7 +418,8 @@ namespace Waman_app.Controllers
                 string comments = formData["entityComment"];
                 string signature = formData["signature"];
                 bool confirmed = formData["inspectionConfirmation"] == "true";
-				string inspectorId = formData["inspectorId"];
+                string inspectorId = formData["inspectorId"];
+                int inspectorIdValue = int.Parse(inspectorId);
                 string inspectorAbsenceComment = formData["inspectorAbsenceComment"];
                 string sendReportToAdministration = formData["sendReportToAdministration"];
 
@@ -393,21 +434,26 @@ namespace Waman_app.Controllers
 
                 // Salva i dati dell'ispezione
                 await BaseClass.HttpClientSend("POST", $"InspectorPlannings/SaveInspectionEnd/{planningId}", updateDto);
+                InvalidateTodayPlansCache(inspectorIdValue);
 
                 // Ottieni il conteggio delle ispezioni aperte
-                List<CompleteInspectorPlanning> plans = new List<CompleteInspectorPlanning>();
+                List<CompleteInspectorPlanning> plans = await GetTodayPlansAsync(inspectorIdValue, true);
+                if (plans == null)
+                    return Json(new { success = false, message = "Failed to refresh the daily plan." });
+
                 int openInspectionsCount = 0;
-                HttpResponseMessage response = await BaseClass.HttpClientSend("GET", $"InspectorPlannings?inspectorId={inspectorId}&day={DateTime.Now.Day}&month={DateTime.Now.Month}&year={DateTime.Now.Year}");
-                if (response.IsSuccessStatusCode)
+                openInspectionsCount = plans.Count(p => !p.inspectorPlanning.closed && !p.inspectorPlanning.deleted);
+
+                var openPlanningsCookie = new HttpCookie("OpenPlanningsCount", openInspectionsCount.ToString())
                 {
-                    plans = await response.Content.ReadAsAsync<List<CompleteInspectorPlanning>>();
-                    openInspectionsCount = plans.Count(p => !p.inspectorPlanning.closed);
+                    Expires = DateTime.Now.AddHours(24)
+                };
+                Response.Cookies.Add(openPlanningsCookie);
 
-                    HttpResponseMessage responsePdf = await BaseClass.HttpClientSend("GET", $"InspectorPlannings/GeneratePdf?id={planningId}");
+                HttpResponseMessage responsePdf = await BaseClass.HttpClientSend("GET", $"InspectorPlannings/GeneratePdf?id={planningId}");
 
-                    if (!response.IsSuccessStatusCode)
-                        return Json(new { success = false, message = "Failed to generate Pdf." });
-                }
+                if (!responsePdf.IsSuccessStatusCode)
+                    return Json(new { success = false, message = "Failed to generate Pdf." });
 
                 // Controlla se tutte le ispezioni sono chiuse
                 if (openInspectionsCount == 0)

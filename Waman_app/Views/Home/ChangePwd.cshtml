@@ -1,4 +1,4 @@
-﻿
+
 @{
     Layout = null;
 }
@@ -10,12 +10,13 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAMAN - Login</title>
+    <title>WAMAN - Change password</title>
 
-    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-    <link href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css" rel="stylesheet">
+    <link rel="preload" href="/Content/phosphor/Phosphor.woff2" as="font" type="font/woff2" crossorigin />
+    <link href="/Content/phosphor/style.css?ver=2.1.2" rel="stylesheet" />
     <link href="~/Content/bootstrap.css" rel="stylesheet" />
     <link href="~/Content/style.css" rel="stylesheet" />
+    <link href="~/Content/inspector-v3.css?ver=7.4" rel="stylesheet" />
 
     <!--favicon-->
     <link rel="apple-touch-icon" sizes="57x57" href="/Images/Favicon/apple-icon-57x57.png">
@@ -40,54 +41,47 @@
     @Scripts.Render("~/bundles/jquery")
 
 </head>
-<body class="body-home">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-4"></div>
-            <div class="col-md-4">
-
-                <div class="container-login">
-
-                    <div class="login-logo">
-                        <a href="/"><img src="~/Images/Logo.png" alt="Waman" /></a>
-                    </div>
-
-                    <div class="login-form">
-                        <form action="" method="post" onsubmit="return false">
-                            <ul>
-                                <li>
-                                    <input type="password" placeholder="New password" id="pwd" required name="pwd" />
-                                    <small id="pwdError" class="error-message" style="color: red; display: none;">The password must contain at least 8 characters, one uppercase letter, one lowercase letter and a number.</small>
-                                </li>
-                                <li>
-                                    <input type="password" placeholder="Repeat password" id="newPwd" required name="newPwd" />
-                                    <small id="newPwdError" class="error-message" style="color: red; display: none;">The passwords do not match.</small>
-                                </li>
-                                <li>
-                                    <input type="submit" value="CHANGE PASSWORD" class="mt-20" onclick="return validatePassword();" />
-                                </li>
-                                <li class="mt-40 textsize-5">Problems with login?<br />contact the administrator at <a href="mailto:info@waman.app"><strong>info@waman.app</strong></a></li>
-                            </ul>
-                            <input type="hidden" name="g" value="@ViewBag.g" class="g" />
-                        </form>
-                    </div>
-                </div>
-
-                <div class="login-footer">
-                    © @DateTime.Now.Year - WAMAN <a href="mailto:info@waman.app">info@waman.app</a>.
-                </div>
-
-            </div>
-            <div class="col-md-4"></div>
+<body class="auth-page">
+    <aside class="auth-brand">
+        <a href="/" class="auth-brand__logo"><img src="~/Images/Logo.png" alt="Waman" width="190" height="72" /></a>
+        <div class="auth-brand__copy">
+            <span>Account security</span>
+            <h1>Create a secure new password.</h1>
+            <p>Use at least eight characters with uppercase, lowercase and a number.</p>
         </div>
-    </div>
+        <div class="auth-brand__footer">&copy; @DateTime.Now.Year District Operations Ltd</div>
+    </aside>
+
+    <main class="auth-panel">
+        <section class="auth-card">
+            <a href="/" class="auth-mobile-logo"><img src="~/Images/Logo.png" alt="Waman" width="150" height="57" /></a>
+            <span class="auth-card__eyebrow">Password reset</span>
+            <h2>Choose a password</h2>
+            <p class="auth-card__intro">Enter and confirm your new inspector account password.</p>
+            <form action="" method="post" onsubmit="return validatePassword();">
+                <div class="auth-field">
+                    <label for="pwd">New password</label>
+                    <div class="auth-field__control"><i class="ph ph-lock-key ui-icon"></i><input type="password" placeholder="Enter new password" id="pwd" required name="pwd" autocomplete="new-password" /></div>
+                    <small id="pwdError" class="error-message" style="color: #a83f3f; display: none;">Use at least 8 characters, one uppercase, one lowercase and one number.</small>
+                </div>
+                <div class="auth-field">
+                    <label for="newPwd">Confirm password</label>
+                    <div class="auth-field__control"><i class="ph ph-lock-key ui-icon"></i><input type="password" placeholder="Repeat new password" id="newPwd" required name="newPwd" autocomplete="new-password" /></div>
+                    <small id="newPwdError" class="error-message" style="color: #a83f3f; display: none;">The passwords do not match.</small>
+                </div>
+                <button type="submit" class="auth-submit">Update password</button>
+                <p class="auth-back">Need help? <a href="mailto:info@waman.app">Contact the administrator</a></p>
+                <input type="hidden" name="g" value="@ViewBag.g" class="g" />
+            </form>
+        </section>
+    </main>
 
 
     <div class="modal fade" id="confirmModalRequest" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 class="modal-title" id="confirmModalLabel">Request Sended</h4>
+                    <h4 class="modal-title" id="confirmModalLabel">Password update</h4>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="modal-r">
@@ -100,7 +94,7 @@
         </div>
     </div>
     <script src="~/Scripts/jquery.unobtrusive-ajax.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
 
     <script>
         function validatePassword() {
@@ -130,9 +124,6 @@
 
         function ChangePwd() {
 
-            if ($('.email').val() == "")
-                return false;
-
             $.get('/Home/SaveChangePwd?pwd=' + $('#pwd').val() + "&guid=" + $('.g').val(), function (res) {
                 if (res)
                     OnSuccess();
@@ -140,7 +131,7 @@
                     OnFailure();
             })
 
-            return true;
+            return false;
         }
 
 
@@ -148,16 +139,17 @@
         function OnSuccess() {
             $('#pwd').val('');
             $('#newPwd').val('');
-            $('#confirmModalRequest').modal('show');
-            $('#modal-r').html('The password has been successfully changed!.<br><a href="/">Return to login</a>');
+            $('#modal-r').html('The password has been successfully changed.<br><a href="/">Return to login</a>');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModalRequest')).show();
         }
 
         function OnFailure() {
             $('#pwd').val('');
             $('#newPwd').val('');
-            $('#confirmModalRequest').modal('show');
             $('#modal-r').html('There was an error sending the request. Please try again!');
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('confirmModalRequest')).show();
         }
     </script>
+    @Html.Partial("_AppFooter")
 </body>
 </html>

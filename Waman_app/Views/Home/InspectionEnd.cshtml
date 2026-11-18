@@ -1,8 +1,8 @@
-﻿@using Waman_app.Models
+@using Waman_app.Models
 @model CompleteInspectorPlanning
 
 @{
-    ViewBag.Title = "InspectionEnd";
+    ViewBag.Title = "Complete inspection";
 
     var openInspections = 0;
     if (Request.Cookies["OpenPlanningsCount"] != null)
@@ -11,36 +11,41 @@
     }
 }
 
-<form method="post" action="/Home/SaveInspectionEnd" id="inspectionEndForm">
+<form method="post" action="/Home/SaveInspectionEnd" id="inspectionEndForm" class="inspection-workflow">
     <input type="hidden" name="inspectorPlanningId" value="@Model.inspectorPlanning.id" />
     <input type="hidden" name="inspectorId" value="@Model.inspector.id" />
 
-    <div class="row">
-        <div class="col-md-12">
-            <h1 class="mt-30">@Model.location.name</h1>
+    <div class="inspection-heading page-hero page-hero--with-meta">
+        <div>
+            <span class="page-heading__eyebrow">Representative declaration</span>
+            <h1>@Model.location.name</h1>
+            <p>Review the final details and close the inspection.</p>
         </div>
-        <div class="col-md-6">
-            <h4 class="mt-15 mb-10 color-azure">ENTITY REPRESENTATIVE</h4>
-            <div class="textsize-5 background-grey p-20">
+        <div class="inspection-heading__meta">
+            <span><small>Date</small><strong>@Model.inspectorPlanning.date.ToString("dd MMM yyyy")</strong></span>
+            <span><small>Time</small><strong>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</strong></span>
+            <span><small>Representative</small><strong>@Model.location.entityRapresentative</strong></span>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <section class="summary-card">
+            <div class="summary-card__title"><i class="ph ph-user-circle ui-icon"></i><span>Representative</span></div>
+            <div class="summary-card__body">
                 <p>
-                    <strong>Name & Surname:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
-                    <strong>Job Title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
-                    <strong>Date:</strong>&nbsp;<span>@Model.inspectorPlanning.date.ToString("dd/MM/yyyy")</span><br />
-                    <strong>Time:</strong>&nbsp;<span>@Model.inspectorPlanning.time.ToString(@"hh\:mm")</span>
+                    <strong>Full name:</strong>&nbsp;<span>@Model.location.entityRapresentative</span><br />
+                    <strong>Job title:</strong>&nbsp;<span>@Model.location.jobTitle</span><br />
                 </p>
             </div>
-        </div>
-        <div class="col-md-6">
-            <h4 class="mt-15 mb-10 color-azure">WORKERS LIST</h4>
-            <div class="textsize-5 background-grey p-20">
+        </section>
+        <section class="summary-card">
+            <div class="summary-card__title"><i class="ph ph-users-three ui-icon"></i><span>Workers on site</span></div>
+            <div class="summary-card__body summary-card__workers">
                 @if (Model.details != null && Model.details.Any())
                 {
                     foreach (var detail in Model.details)
                     {
-                        <p>
-                            <strong>@detail.worker.name @detail.worker.lastName</strong>&nbsp;
-                            <em>(@detail.jobTypeName)</em><br />
-                        </p>
+                        <span><strong>@detail.worker.name @detail.worker.lastName</strong><small>@detail.jobTypeName</small></span>
                     }
                 }
                 else
@@ -48,151 +53,105 @@
                     <p>No workers assigned to this location.</p>
                 }
             </div>
-        </div>
+        </section>
     </div>
 
     <div class="page-list mt-30">
         <div class="row">
             <div class="col-md-12">
                 <div class="flex-column">
-                    <h4 class="color-blue mb-10">ENTITY COMMENTS:</h4>
-                    <textarea class="entity-comments" placeholder="Write a note or comment here..." name="entityComment">@Model.inspectorPlanning.entityComment</textarea>
+                    <label for="entityComment" class="field-label">Entity comments <small>Optional</small></label>
+                    <textarea id="entityComment" class="entity-comments" placeholder="Add comments from the entity..." name="entityComment">@Model.inspectorPlanning.entityComment</textarea>
                 </div>
             </div>
             <div class="col-md-12 mt-20">
-                <div class="site-table site-table-inspection site-table-form">
-                    <ul>
-                        <li style="width:80%;">
-                            <strong>
-                                We confirm that the inspection was carried out as reported<br />
-                                by the CWSEF Inspector to the satisfaction of our entity.
-                            </strong>
-                        </li>
-                        <li style="width:20%; justify-content: center;">
-                            <div class="flex-between">
-                                <section class="text-center mr-15">
-                                    <label for="confirm_yes">
-                                        YES<br />
-                                        <input type="radio" id="confirm_yes" name="inspectionConfirmation" value="true" required checked />
-                                    </label>
-                                </section>
-                                <section class="text-center ml-15">
-                                    <label for="confirm_no">
-                                        NO<br />
-                                        <input type="radio" id="confirm_no" name="inspectionConfirmation" value="false" required />
-                                    </label>
-                                </section>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <div class="col-md-12 mt-20">
-                <div class="site-table site-table-inspection site-table-form">
-                    <ul>
-                        <li style="width:80%;">
-                            <strong>
-                                Select YES if the facility representative is present and have them sign in the following box,<br />otherwise select NO and add a reason.
-                            </strong>
-                        </li>
-                        <li style="width:20%; justify-content: center;">
-                            <div class="flex-between">
-                                <section class="text-center mr-15">
-                                    <label for="confirm_yes">
-                                        YES<br />
-                                        <input type="radio" id="existEntityRappresentative_yes" class="existEntityRappresentative" name="existEntityRappresentative" value="true" required checked />
-                                    </label>
-                                </section>
-                                <section class="text-center ml-15">
-                                    <label for="confirm_no">
-                                        NO<br />
-                                        <input type="radio" id="existEntityRappresentative_no" class="existEntityRappresentative" name="existEntityRappresentative" value="false" required />
-                                    </label>
-                                </section>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="col-md-12 mt-20">
-                <div class="site-table site-table-inspection site-table-form">
-                    <ul>
-                        <li style="width:80%;">
-                            <strong>
-                                Selecting YES you send the report to the administration which will evaluate any differences
-                            </strong>
-                        </li>
-                        <li style="width:20%; justify-content: center;">
-                            <div class="flex-between">
-                                <section class="text-center mr-15">
-                                    <label for="confirm_yes">
-                                        YES<br />
-                                        <input type="radio" id="sendReportToAdministration_yes" class="sendReportToAdministration" name="sendReportToAdministration" value="true" required  />
-                                    </label>
-                                </section>
-                                <section class="text-center ml-15">
-                                    <label for="confirm_no">
-                                        NO<br />
-                                        <input type="radio" id="sendReportToAdministration_no" class="sendReportToAdministration" name="sendReportToAdministration" value="false" required checked />
-                                    </label>
-                                </section>
-                            </div>
-                        </li>
-                    </ul>
+                <div class="declaration-list">
+                    <fieldset class="declaration-card">
+                        <div class="declaration-card__copy"><span>01</span><div><legend>Inspection confirmation</legend><p>Was the inspection carried out as reported and to the entity's satisfaction?</p></div></div>
+                        <div class="segmented-control declaration-card__choice">
+                            <label><input type="radio" id="inspectionConfirmation_yes" name="inspectionConfirmation" value="true" required checked /><span>Yes</span></label>
+                            <label><input type="radio" id="inspectionConfirmation_no" name="inspectionConfirmation" value="false" required /><span>No</span></label>
+                        </div>
+                    </fieldset>
+                    <fieldset class="declaration-card">
+                        <div class="declaration-card__copy"><span>02</span><div><legend>Representative present</legend><p>If present, the facility representative must sign below. If absent, provide a reason.</p></div></div>
+                        <div class="segmented-control declaration-card__choice">
+                            <label><input type="radio" id="existEntityRappresentative_yes" class="existEntityRappresentative" name="existEntityRappresentative" value="true" required checked /><span>Yes</span></label>
+                            <label><input type="radio" id="existEntityRappresentative_no" class="existEntityRappresentative" name="existEntityRappresentative" value="false" required /><span>No</span></label>
+                        </div>
+                    </fieldset>
+                    <fieldset class="declaration-card">
+                        <div class="declaration-card__copy"><span>03</span><div><legend>Administrative review</legend><p>Should this report be sent to administration to review any discrepancies?</p></div></div>
+                        <div class="segmented-control declaration-card__choice">
+                            <label><input type="radio" id="sendReportToAdministration_yes" class="sendReportToAdministration" name="sendReportToAdministration" value="true" required /><span>Yes</span></label>
+                            <label><input type="radio" id="sendReportToAdministration_no" class="sendReportToAdministration" name="sendReportToAdministration" value="false" required checked /><span>No</span></label>
+                        </div>
+                    </fieldset>
                 </div>
             </div>
 
             <div class="col-md-12 mt-20 div-absent-comments">
                 <div class="flex-column">
-                    <h4 class="color-blue mb-10">WHY THE REPRESENTATIVE IS ABSENT:</h4>
-                    <textarea class="absent-comments" placeholder="Write a comment here..." name="inspectorAbsenceComment"></textarea>
+                    <label for="absenceComment" class="field-label">Reason for representative's absence</label>
+                    <textarea id="absenceComment" class="absent-comments" placeholder="Provide a short explanation..." name="inspectorAbsenceComment"></textarea>
                 </div>
             </div>
 
         </div>
     </div>
     <div class="row row-signature">
-        <div class="col-md-12">
-            <div class="flex-end mt-10">
-                <div class="flex-column">
-                    <h4 class="color-blue mb-5">SIGNATURE:</h4>
-                    <div class="container-box" onclick="OpenPopup('.signature-popup')">
-                        <div id="box-signature"></div>
-                        <img id="sig-image" src="" />
-                    </div>
+        <div class="signature-field">
+            <div class="signature-field__copy">
+                <span class="signature-field__icon"><i class="ph ph-signature ui-icon"></i></span>
+                <div>
+                    <label class="field-label" for="signature-trigger">Representative signature</label>
+                    <p>Ask the representative to sign using a finger or stylus.</p>
                 </div>
             </div>
+            <button id="signature-trigger" type="button" class="signature-trigger" onclick="OpenPopup('.signature-popup')">
+                <span id="box-signature"><i class="ph ph-pen-nib ui-icon"></i><strong>Tap to sign</strong><small>Signature required</small></span>
+                <img id="sig-image" src="" alt="Representative signature" />
+            </button>
         </div>
     </div>
 
-    <div class="row mt-15">
-        <div class="col-md-12">
-            <div class="line-top"></div>
-        </div>
-        <div class="col-md-12">
-            <div class="flex-between">
-                <a href="/Home/InspectionStep1?id=@Model.inspectorPlanning.id" class="back-button"><i class='bx bx-chevron-left'></i>BACK</a>
-                <button id="submitInspectionEnd" type="button" class="next-button">CLOSE INSPECTION <i class='bx bx-check'></i></button>
-            </div>
+    <div class="inspection-action-dock" role="group" aria-label="Inspection actions">
+        <div class="inspection-actions">
+            <a href="/Home/InspectionStep1?id=@Model.inspectorPlanning.id" class="back-button"><i class="ph ph-caret-left ui-icon"></i>Back</a>
+            <span class="inspection-action-dock__status"><small>Step 2 of 2</small><strong>Review and declaration</strong></span>
+            <button id="submitInspectionEnd" type="button" class="next-button">Close inspection <i class="ph ph-check-circle ui-icon"></i></button>
         </div>
     </div>
 </form>
 
 <!-- popup della firma -->
-<div class="container-popup signature-popup">
-    <section>
-        <a class="close-popup" onclick="ClosePopup('.signature-popup')"><i class='bx bx-x'></i></a>
-        <div class="flex-column">
-            <h5 class="color-blue mb-10">Sign here and confirm</h5>
-            <canvas id="sig-canvas">
-                Your browser does not support the canvas element.
-            </canvas>
-            <div class="mt-10">
-                <button class="btn-sign background-green mr-10" id="sig-submitBtn"><i class='bx bx-check'></i>&nbsp;Confirm Signature</button>
-                <button class="btn-sign background-red" id="sig-clearBtn"><i class='bx bx-reset'></i>&nbsp;Clear Signature</button>
+<div class="container-popup signature-popup" role="dialog" aria-modal="true" aria-labelledby="signature-dialog-title">
+    <section class="signature-dialog">
+        <header class="signature-dialog__header">
+            <span class="signature-dialog__icon"><i class="ph ph-signature ui-icon"></i></span>
+            <div class="signature-dialog__copy">
+                <span class="signature-dialog__eyebrow">Entity confirmation</span>
+                <h2 id="signature-dialog-title">Representative signature</h2>
+                <p>Sign naturally with a finger or stylus inside the area below.</p>
+            </div>
+            <button type="button" class="close-popup" aria-label="Close signature" onclick="ClosePopup('.signature-popup')"><span class="signature-dialog__close-glyph" aria-hidden="true">&times;</span></button>
+        </header>
+        <div class="signature-dialog__body">
+            <div class="signature-dialog__canvas-heading">
+                <strong>Signature area</strong>
+                <span>Keep the signature above the line</span>
+            </div>
+            <div class="signature-dialog__canvas-wrap">
+                <canvas id="sig-canvas">
+                    Your browser does not support the canvas element.
+                </canvas>
+                <span class="signature-dialog__line" aria-hidden="true"></span>
             </div>
         </div>
+        <footer class="signature-dialog__actions">
+            <button type="button" class="btn-sign signature-dialog__clear" id="sig-clearBtn"><i class="ph ph-eraser ui-icon"></i>Clear</button>
+            <button type="button" class="btn-sign signature-dialog__confirm" id="sig-submitBtn"><i class="ph ph-check-circle ui-icon"></i>Confirm signature</button>
+        </footer>
     </section>
 </div>
 
@@ -200,6 +159,7 @@
     $('.existEntityRappresentative').on('change', function () {
         $('.div-absent-comments').hide();
         $('.row-signature').show();
+        $('.absent-comments').removeAttr('required');
         if ($(this).val() == "false") {
             $('.div-absent-comments').show();
             $('.row-signature').hide();

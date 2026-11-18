@@ -1,6 +1,7 @@
-﻿@model List<Waman_app.Models.CompleteInspectorPlanning>
+@model List<Waman_app.Models.CompleteInspectorPlanning>
 @using Waman_app.Models
 @using Newtonsoft.Json
+@using System.Globalization
 
 @{
     ViewBag.Title = "Dashboard";
@@ -8,46 +9,78 @@
 
     var inspectorsCookie = Request.Cookies["Inspectors"]?.Value;
     var inspector = inspectorsCookie != null ? JsonConvert.DeserializeObject<Inspectors>(inspectorsCookie) : null;
-    var inspectorIdCookie = inspector.id;
+    var inspectorIdCookie = inspector != null ? inspector.id : 0;
+    var todayPlans = Model != null
+        ? Model.Where(item => item.inspectorPlanning.date.Date == today && !item.inspectorPlanning.closed).OrderBy(a => a.inspectorPlanning.time).ToList()
+        : new List<CompleteInspectorPlanning>();
 }
 
-<div class="dashboard">
-    <div class="button-mobile">
+<section class="dashboard-hero page-hero">
+    <div class="dashboard-hero__copy">
+        <span class="page-heading__eyebrow">@today.ToString("dddd, dd MMMM yyyy", CultureInfo.InvariantCulture)</span>
+        <h1>Good morning, @(inspector != null ? inspector.name : "Inspector")</h1>
+        @if (todayPlans.Any())
+        {
+            <p>You have <strong>@todayPlans.Count</strong> @(todayPlans.Count == 1 ? "inspection" : "inspections") scheduled today.</p>
+        }
+        else
+        {
+            <p>Your schedule is clear for today.</p>
+        }
+    </div>
+    <div class="dashboard-hero__mark" aria-hidden="true">
+        <span></span><span></span><span></span>
+    </div>
+</section>
+
+<section class="quick-actions" aria-label="Quick actions">
+    <div class="quick-action">
         @if (ViewBag.HasTodayInspections)
         {
             <a href="/Home/InspectionPlan" class="enabled">
-                <i class='bx bxs-calendar'></i><br />
-                Inspections plan
+                <span class="quick-action__icon"><i class="ph ph-calendar-check ui-icon"></i></span>
+                <span class="quick-action__copy"><strong>Today's plan</strong><small>Open your inspection schedule</small></span>
+                <i class="ph ph-caret-right ui-icon quick-action__arrow"></i>
             </a>
         }
         else
         {
-            <a href="javascript:void(0)" class="disabled" title="No inspections available for today">
-                <i class='bx bxs-calendar'></i><br />
-                Inspections plan
-            </a>
+            <div class="quick-action__link disabled" aria-disabled="true" title="No inspections available for today">
+                <span class="quick-action__icon"><i class="ph ph-calendar-x ui-icon"></i></span>
+                <span class="quick-action__copy"><strong>Today's plan</strong><small>No inspections scheduled</small></span>
+            </div>
         }
     </div>
-    <div class="button-mobile">
+    <div class="quick-action">
         <a href="/Home/InspectionArchive">
-            <i class='bx bxs-folder'></i><br />
-            Inspections archive
+            <span class="quick-action__icon"><i class="ph ph-archive ui-icon"></i></span>
+            <span class="quick-action__copy"><strong>Archive</strong><small>Review completed inspections</small></span>
+            <i class="ph ph-caret-right ui-icon quick-action__arrow"></i>
         </a>
     </div>
-    <div class="button-mobile">
+    <div class="quick-action">
         <a href="/Home/InfoBox">
-            <i class='bx bxs-info-square'></i><br />
-            Info box
+            <span class="quick-action__icon"><i class="ph ph-chat-teardrop-text ui-icon"></i></span>
+            <span class="quick-action__copy"><strong>Info box</strong><small>Read notices and updates</small></span>
+            <i class="ph ph-caret-right ui-icon quick-action__arrow"></i>
         </a>
     </div>
-</div>
+</section>
 
-<div class="page-list mt-30">
-    <div class="row">
-        <div class="col-md-12 text-center">
-            <h4 class="line-top color-blue">YOUR DAILY INSPECTIONS</h4>
+<section class="content-card schedule-card">
+    <div class="content-card__header">
+        <div>
+            <span class="content-card__eyebrow">Schedule</span>
+            <h2>Today's inspections</h2>
         </div>
-        <div class="col-md-12">
+        @if (todayPlans.Any())
+        {
+            <a href="/Home/InspectionPlan" class="text-link">View plan <i class="ph ph-arrow-right ui-icon"></i></a>
+        }
+    </div>
+    <div class="content-card__body">
+        <div class="row">
+            <div class="col-md-12">
             <div class="site-table site-table-dashboard">
                 <ul class="site-table__top">
                     <li style="width:13%;"><span>DATE</span></li>
@@ -57,8 +90,6 @@
                 </ul>
                 @if (Model != null && Model.Any())
                 {
-                    var todayPlans = Model.Where(item => item.inspectorPlanning.date.Date == today).Where(a => a.inspectorPlanning.closed != true).OrderBy(a => a.inspectorPlanning.time);
-
                     if (todayPlans.Any())
                     {
                         foreach (var item in todayPlans)
@@ -77,37 +108,56 @@
                     }
                     else
                     {
-                        <p class="text-center" style="margin: 10px">No inspections scheduled for today.</p>
+                        <p class="text-center empty">No inspections scheduled for today.</p>
                     }
                 }
                 else
                 {
-                    <p class="text-center" style="margin: 10px">No inspections scheduled for today.</p>
+                    <p class="text-center empty">No inspections scheduled for today.</p>
                 }
             </div>
         </div>
     </div>
-</div>
+    </div>
+</section>
 
 <script>
     $(document).ready(function () {
     // Ottieni la data odierna in formato YYYY-MM-DD
-    var today = new Date().toISOString().split('T')[0];
+    var now = new Date();
+    var today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
 
     // Recupera i dati salvati nel localStorage
     var inspectionData = JSON.parse(localStorage.getItem('inspectionData') || '{}');
     var inspectionCoordinatesSentDate = inspectionData.date;
     var sentInspectionIds = inspectionData.sentInspectionIds || [];
+    var attemptedInspectionIds = inspectionData.attemptedInspectionIds || [];
+    var geocodingQueue = [];
+    var activeRequests = 0;
+    var maxConcurrentRequests = 2;
 
-    var hasSentAllCoordinates = false;
-    var pendingRequests = 0;
+    function saveInspectionData() {
+        inspectionData.date = today;
+        inspectionData.sentInspectionIds = sentInspectionIds;
+        inspectionData.attemptedInspectionIds = attemptedInspectionIds;
+        localStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+    }
+
+    function markAttempted(inspectionId) {
+        if (!attemptedInspectionIds.includes(inspectionId)) {
+            attemptedInspectionIds.push(inspectionId);
+        }
+        saveInspectionData();
+    }
 
     function loadInspectionCoordinates() {
         // Controlla se le coordinate sono già state inviate oggi
         if (inspectionCoordinatesSentDate !== today) {
             // Se la data è diversa, resetta l'elenco degli ID inviati
             sentInspectionIds = [];
+            attemptedInspectionIds = [];
             inspectionCoordinatesSentDate = today;
+            saveInspectionData();
         }
 
         // Itera su ogni elemento con la classe 'inspection-item'
@@ -121,18 +171,35 @@
                 return;
 
             // Se l'ispezione è già stata inviata, salta
-            if (sentInspectionIds.includes(inspectionId))
+            if (sentInspectionIds.includes(inspectionId) || attemptedInspectionIds.includes(inspectionId))
                 return;
 
             // Combina nome e indirizzo per la geocodifica
-            var addressToGeocode = locationName + space + fullAddress;
-            pendingRequests++;
+            geocodingQueue.push({
+                inspectionId: inspectionId,
+                fullAddress: fullAddress,
+                locationName: locationName,
+                addressToGeocode: locationName + space + fullAddress
+            });
+        });
 
-            // Effettua la chiamata al controller per la geocodifica
+        processGeocodingQueue();
+    }
+
+    function processGeocodingQueue() {
+        while (activeRequests < maxConcurrentRequests && geocodingQueue.length) {
+            geocodeInspection(geocodingQueue.shift());
+        }
+    }
+
+    function geocodeInspection(item) {
+        activeRequests++;
+
+        // Marker synchronization is background work: it must never delay the page UI.
             $.ajax({
                 url: '@Url.Action("GeocodeAddress", "Geocoding")',
                 type: 'POST',
-                data: { address: addressToGeocode },
+                data: { address: item.addressToGeocode },
                 success: function (data) {
                     if (data.success) {
                         var lat = data.latitude;
@@ -142,8 +209,8 @@
                             Latitude: parseFloat(lat),
                             Longitude: parseFloat(lon),
                             Timestamp: new Date().toISOString(),
-                            Address: fullAddress,
-                            LocationName: locationName
+                            Address: item.fullAddress,
+                            LocationName: item.locationName
                         };
 
                         var inspectorId = '@inspectorIdCookie';
@@ -156,47 +223,38 @@
                             data: JSON.stringify(coordinateData)
                         })
                         .done(function (response) {
-                            console.log("Inspection marker inviato per " + fullAddress, response);
-
-                            // Aggiungi l'ID dell'ispezione all'elenco degli ID inviati
-                            sentInspectionIds.push(inspectionId);
-
-                            // Aggiorna il localStorage
-                            inspectionData.date = today;
-                            inspectionData.sentInspectionIds = sentInspectionIds;
-                            localStorage.setItem('inspectionData', JSON.stringify(inspectionData));
+                            if (!sentInspectionIds.includes(item.inspectionId)) {
+                                sentInspectionIds.push(item.inspectionId);
+                            }
                         })
                         .fail(function (err) {
-                            console.error("Errore nell'invio del marker di ispezione per " + fullAddress, err);
+                            console.warn("Inspection marker was not synchronized for " + item.fullAddress);
                         })
                         .always(function () {
-                            pendingRequests--;
-                            checkAllRequestsCompleted();
+                            markAttempted(item.inspectionId);
+                            activeRequests--;
+                            processGeocodingQueue();
                         });
                     } else {
-                        console.error("Geocoding fallito per l'indirizzo: " + fullAddress);
-                        pendingRequests--;
-                        checkAllRequestsCompleted();
+                        markAttempted(item.inspectionId);
+                        activeRequests--;
+                        processGeocodingQueue();
                     }
                 },
                 error: function (jqxhr, textStatus, error) {
-                    console.error("Richiesta a Geocoding API fallita: " + textStatus + ", " + error);
-                    pendingRequests--;
-                    checkAllRequestsCompleted();
+                    console.warn("Geocoding request failed for " + item.fullAddress);
+                    markAttempted(item.inspectionId);
+                    activeRequests--;
+                    processGeocodingQueue();
                 }
             });
-        });
     }
 
-    // Funzione per verificare se tutte le richieste sono completate
-    function checkAllRequestsCompleted() {
-        if (pendingRequests === 0 && !hasSentAllCoordinates) {
-            console.log("Tutte le coordinate di ispezione sono state caricate.");
-            hasSentAllCoordinates = true;
-        }
+    // Run non-essential marker synchronization only after the page has settled.
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadInspectionCoordinates, { timeout: 2500 });
+    } else {
+        setTimeout(loadInspectionCoordinates, 1200);
     }
-
-    // Chiama la funzione per caricare le coordinate delle ispezioni
-    loadInspectionCoordinates();
 });
 </script>
