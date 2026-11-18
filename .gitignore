@@ -360,6 +360,28 @@ MigrationBackup/
 .ionide/
 
 # Fody - auto-generated XML schema
-FodyWeavers.xsd_deploy/FileFirebase/*.json
+FodyWeavers.xsd
+
+# WAMAN local/runtime artifacts
+Waman_app/Public/Pdf/
+Waman_app/Public/Zip/
+Waman_app/App_Data/
+Waman_app/logs/
+Waman_app/Logs/
+*.bak
+*.tmp
+*.user
+
+# WAMAN secrets and local-only configuration
+_deploy/FileFirebase/*.json
 _deploy/FileFirebase/
+Waman_app/FileFirebase/*.json
+**/FileFirebase/*.json
+*.pfx
+*.p12
+*.key
+*.pem
+*.env
+*.env.*
+!*.env.example
 *.json
